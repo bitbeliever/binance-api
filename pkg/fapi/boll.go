@@ -6,7 +6,7 @@ import (
 )
 
 type bollResult struct {
-	MB, UP, DN float64
+	UP, MB, DN float64
 }
 
 var klineDataSum []futures.WsKline
@@ -63,7 +63,8 @@ func CalculateBollByFapiKline(lines []*futures.Kline) bollResult {
 		closeSum += math.Pow(Str2Float64(line.Close)-MA, 2)
 	}
 	// 标准差
-	MD := math.Sqrt(closeSum / float64(N-1))
+	//MD := math.Sqrt(closeSum / float64(N-1))
+	MD := math.Sqrt(closeSum / float64(N)) // todo: 标准差: 除以N || N-1(币安公式)
 
 	return bollResult{
 		MB: MA,
