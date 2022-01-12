@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// RealTimeKline 实时计算boll
+// RealTimeKline 实时获取最新k线数据和实时计算boll
 func RealTimeKline() {
 	lines, err := KlineHistory("ETHUSDT", "15m", 21, 0)
 	if err != nil {

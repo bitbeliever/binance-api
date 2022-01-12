@@ -2,11 +2,13 @@ package fapi
 
 import (
 	"context"
+	"github.com/adshao/go-binance/v2/futures"
 	"log"
 	"time"
 )
 
-func AccountServiceTest() {
+// AccountService 账户查询
+func AccountService() *futures.Account {
 	c := NewClient()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
@@ -34,4 +36,6 @@ func AccountServiceTest() {
 	//		log.Println(balance)
 	//	}
 	//}
+
+	return res
 }

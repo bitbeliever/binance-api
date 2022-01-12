@@ -1,7 +1,6 @@
 package fapi
 
 import (
-	"encoding/json"
 	"github.com/adshao/go-binance/v2/futures"
 	"log"
 )
@@ -43,15 +42,4 @@ func KlineStream(symbol, interval string) chan futures.WsKline {
 	//}
 
 	return klineCh
-}
-
-func toJson(v interface{}) string {
-	b, err := json.Marshal(v)
-	if err != nil {
-		panic(err)
-
-		//log.Println(err)
-		//return ""
-	}
-	return string(b)
 }

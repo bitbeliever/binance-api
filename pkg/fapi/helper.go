@@ -1,6 +1,9 @@
 package fapi
 
-import "strconv"
+import (
+	"encoding/json"
+	"strconv"
+)
 
 func Str2Float64(s string) float64 {
 	f, err := strconv.ParseFloat(s, 64)
@@ -9,4 +12,15 @@ func Str2Float64(s string) float64 {
 		panic(err)
 	}
 	return f
+}
+
+func toJson(v interface{}) string {
+	b, err := json.Marshal(v)
+	if err != nil {
+		panic(err)
+
+		//log.Println(err)
+		//return ""
+	}
+	return string(b)
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// ServerTime 获取服务器时间 用于同步
 func ServerTime() {
 	t, err := NewClient().NewServerTimeService().Do(context.Background())
 	if err != nil {
