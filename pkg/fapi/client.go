@@ -1,4 +1,4 @@
-package fur
+package fapi
 
 import (
 	"github.com/adshao/go-binance/v2/futures"

@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/adshao/go-binance/v2/futures"
 	"github.com/bitbeliever/binance-api/helper"
-	futures2 "github.com/bitbeliever/binance-api/pkg/fur"
+	futures2 "github.com/bitbeliever/binance-api/pkg/fapi"
 	"log"
 )
 

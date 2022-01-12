@@ -15,10 +15,12 @@ func UserDataStream() {
 		log.Println(err)
 		return
 	}
+	log.Println("spot listen key", listenKey)
 
 	doneCh, stopCh, err := binance.WsUserDataServe(listenKey, func(event *binance.WsUserDataEvent) {
 		log.Println("spot event update")
 	}, func(err error) {
+		log.Println("user data service err", err)
 
 	})
 	if err != nil {

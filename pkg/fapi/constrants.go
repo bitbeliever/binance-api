@@ -1,4 +1,4 @@
-package fur
+package fapi
 
 const (
 	// 莱特币
@@ -9,4 +9,10 @@ const (
 	ETH = "ETHUSDT"
 	// 狗狗
 	DOG = "DOGUSDT"
+	// fil
+	FIL = "FILUSDT"
+)
+
+const (
+	layout = "2006-01-02 15:04:05"
 )

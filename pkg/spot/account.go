@@ -2,7 +2,7 @@ package spot
 
 import (
 	"context"
-	"github.com/bitbeliever/binance-api/pkg/fur"
+	"github.com/bitbeliever/binance-api/pkg/fapi"
 	"log"
 	"time"
 )
@@ -21,7 +21,7 @@ func AccountServiceTest() {
 
 	//log.Println(res)
 	for _, balance := range res.Balances {
-		if fur.Str2Float64(balance.Locked) > 0 || fur.Str2Float64(balance.Free) > 0 {
+		if fapi.Str2Float64(balance.Locked) > 0 || fapi.Str2Float64(balance.Free) > 0 {
 			log.Println(toJson(balance))
 		}
 	}

@@ -1,13 +1,13 @@
 package main
 
 import (
-	"github.com/bitbeliever/binance-api/pkg/fur"
+	"github.com/bitbeliever/binance-api/pkg/fapi"
 )
 
 func main() {
-	go fur.KlineStream()
+	go fapi.KlineStream("ETHUSDT", "15m")
 	//go spotws.KlineStream()
 
-	fur.AccountServiceTest()
+	//fapi.AccountServiceTest()
 	select {}
 }

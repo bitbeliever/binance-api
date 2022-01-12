@@ -1,4 +1,4 @@
-package fur
+package fapi
 
 import (
 	"context"
@@ -17,7 +17,18 @@ func AccountServiceTest() {
 		return
 	}
 
-	log.Println(toJson(res))
+	//log.Println(toJson(res))
+	for _, asset := range res.Assets {
+		if Str2Float64(asset.WalletBalance) > 0 {
+			log.Println(toJson(asset))
+		}
+	}
+	for _, position := range res.Positions {
+		if Str2Float64(position.PositionAmt) > 0 {
+			log.Println(toJson(position))
+		}
+
+	}
 	//for _, balance := range res.Balances {
 	//	if Str2Float64(balance.Locked) > 0 || Str2Float64(balance.Free) > 0 {
 	//		log.Println(balance)

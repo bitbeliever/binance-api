@@ -1,4 +1,4 @@
-package fur
+package fapi
 
 import (
 	"context"
@@ -19,12 +19,12 @@ func UserDataStream(ch chan *futures.WsUserDataEvent) {
 		return
 	}
 
-	log.Println("key:", listenKey)
+	log.Println("fapi key:", listenKey)
 
 	doneCh, stopCh, err := futures.WsUserDataServe(listenKey, func(event *futures.WsUserDataEvent) {
 		ch <- event
 	}, func(err error) {
-		log.Println("data serve err", err)
+		log.Println("fapi data serve err", err)
 		return
 	})
 

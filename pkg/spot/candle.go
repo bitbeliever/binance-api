@@ -2,7 +2,6 @@ package spot
 
 import (
 	"context"
-	"fmt"
 	"github.com/adshao/go-binance/v2"
 	"github.com/bitbeliever/binance-api/configs"
 	"log"
@@ -22,7 +21,7 @@ func Test() {
 	klines, err := client.NewKlinesService().Symbol("LTCBTC").
 		Interval("15m").Limit(1000).Do(context.Background())
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 	for _, k := range klines {
