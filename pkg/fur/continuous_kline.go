@@ -1,0 +1,5 @@
+package fur
+
+func conKline() {
+
+}
