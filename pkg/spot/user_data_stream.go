@@ -19,6 +19,7 @@ func UserDataStream() {
 
 	doneCh, stopCh, err := binance.WsUserDataServe(listenKey, func(event *binance.WsUserDataEvent) {
 		log.Println("spot event update")
+		log.Println(toJson(event))
 	}, func(err error) {
 		log.Println("user data service err", err)
 
@@ -35,7 +36,7 @@ func UserDataStream() {
 }
 
 func keepUserDataServiceAlive(client *binance.Client, listenKey string) {
-	ticker := time.NewTicker(time.Minute * 30)
+	ticker := time.NewTicker(time.Minute * 10)
 	for {
 		select {
 		case <-ticker.C:

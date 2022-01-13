@@ -2,8 +2,9 @@ package main
 
 import (
 	"github.com/adshao/go-binance/v2/futures"
-	"github.com/bitbeliever/binance-api/helper"
 	futures2 "github.com/bitbeliever/binance-api/pkg/fapi"
+	"github.com/bitbeliever/binance-api/pkg/helper"
+	"github.com/bitbeliever/binance-api/pkg/spot"
 	"log"
 )
 
@@ -12,12 +13,10 @@ const (
 )
 
 func main() {
-
 	//ws.KlineStream()
-
-	log.Println(chBuf)
 	ch := make(chan *futures.WsUserDataEvent, chBuf)
 	futures2.UserDataStream(ch)
+	spot.UserDataStream()
 
 	for {
 		select {

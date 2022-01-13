@@ -28,6 +28,45 @@ priceProtect	STRING	NO	条件单触发保护："TRUE","FALSE", 默认"FALSE". �
 newOrderRespType	ENUM	NO	"ACK", "RESULT", 默认 "ACK"
 recvWindow	LONG	NO
 timestamp	LONG	YES
+
+根据 order type的不同，某些参数强制要求，具体如下:
+
+Type	强制要求的参数
+LIMIT	timeInForce, quantity, price
+MARKET	quantity
+STOP, TAKE_PROFIT	quantity, price, stopPrice
+STOP_MARKET, TAKE_PROFIT_MARKET	stopPrice
+TRAILING_STOP_MARKET	callbackRate
+条件单的触发必须:
+
+如果订单参数priceProtect为true:
+达到触发价时，MARK_PRICE(标记价格)与CONTRACT_PRICE(合约最新价)之间的价差不能超过改symbol触发保护阈值
+触发保护阈值请参考接口GET /fapi/v1/exchangeInfo 返回内容相应symbol中"triggerProtect"字段
+STOP, STOP_MARKET 止损单:
+买入: 最新合约价格/标记价格高于等于触发价stopPrice
+卖出: 最新合约价格/标记价格低于等于触发价stopPrice
+TAKE_PROFIT, TAKE_PROFIT_MARKET 止盈单:
+买入: 最新合约价格/标记价格低于等于触发价stopPrice
+卖出: 最新合约价格/标记价格高于等于触发价stopPrice
+TRAILING_STOP_MARKET 跟踪止损单:
+买入: 当合约价格/标记价格区间最低价格低于激活价格activationPrice,且最新合约价格/标记价高于等于最低价设定回调幅度。
+卖出: 当合约价格/标记价格区间最高价格高于激活价格activationPrice,且最新合约价格/标记价低于等于最高价设定回调幅度。
+TRAILING_STOP_MARKET 跟踪止损单如果遇到报错 {"code": -2021, "msg": "Order would immediately trigger."}
+表示订单不满足以下条件:
+
+买入: 指定的activationPrice 必须小于 latest price
+卖出: 指定的activationPrice 必须大于 latest price
+newOrderRespType 如果传 RESULT:
+
+MARKET 订单将直接返回成交结果；
+配合使用特殊 timeInForce 的 LIMIT 订单将直接返回成交或过期拒绝结果。
+STOP_MARKET, TAKE_PROFIT_MARKET 配合 closePosition=true:
+
+条件单触发依照上述条件单触发逻辑
+条件触发后，平掉当时持有所有多头仓位(若为卖单)或当时持有所有空头仓位(若为买单)
+不支持 quantity 参数
+自带只平仓属性，不支持reduceOnly参数
+双开模式下,LONG方向上不支持BUY; SHORT 方向上不支持SELL
 */
 func CreateOrder(symbol string, side futures.SideType) {
 	client := NewClient()
@@ -43,4 +82,18 @@ func CreateOrder(symbol string, side futures.SideType) {
 	}
 
 	log.Println(toJson(order))
+}
+
+func TestCreateOrder() {
+}
+
+// QueryOpenOrders 查询当前全部挂单
+func QueryOpenOrders() {
+	orders, err := NewClient().NewListOpenOrdersService().Do(context.Background())
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	log.Println(toJsonIndent(orders))
 }

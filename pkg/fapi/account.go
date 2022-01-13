@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-// AccountService 账户查询
-func AccountService() *futures.Account {
+// QueryAccount 账户查询 账户信息 fapi/v1/account
+func QueryAccount() *futures.Account {
 	c := NewClient()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
@@ -16,7 +16,7 @@ func AccountService() *futures.Account {
 	res, err := c.NewGetAccountService().Do(ctx)
 	if err != nil {
 		log.Println(err)
-		return
+		return res
 	}
 
 	//log.Println(toJson(res))
@@ -38,4 +38,15 @@ func AccountService() *futures.Account {
 	//}
 
 	return res
+}
+
+// QueryAccountBalance 账户余额
+func QueryAccountBalance() {
+	balances, err := NewClient().NewGetBalanceService().Do(context.Background())
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	log.Println(toJsonIndent(balances))
 }

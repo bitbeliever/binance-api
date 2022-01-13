@@ -11,7 +11,7 @@ import (
 func UserDataStream(ch chan *futures.WsUserDataEvent) {
 	c := futures.NewClient(configs.Cfg.Key.ApiKey, configs.Cfg.Key.SecretKey)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	listenKey, err := c.NewStartUserStreamService().Do(ctx)
 	if err != nil {
@@ -38,12 +38,14 @@ func UserDataStream(ch chan *futures.WsUserDataEvent) {
 	go keepListenKeyAlive(c, listenKey)
 }
 
+// keep alive
 func keepListenKeyAlive(client *futures.Client, listenKey string) {
 
-	ticker := time.NewTicker(time.Minute * 30)
+	ticker := time.NewTicker(time.Minute * 10)
 	for {
 		select {
 		case <-ticker.C:
+			log.Println("user data stream keeping alive")
 			if err := client.NewKeepaliveUserStreamService().ListenKey(listenKey).Do(context.Background()); err != nil {
 				log.Println(err)
 			}

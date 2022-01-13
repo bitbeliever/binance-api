@@ -24,3 +24,14 @@ func toJson(v interface{}) string {
 	}
 	return string(b)
 }
+
+func toJsonIndent(v interface{}) string {
+	b, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		panic(err)
+
+		//log.Println(err)
+		//return ""
+	}
+	return string(b)
+}
