@@ -68,7 +68,7 @@ STOP_MARKET, TAKE_PROFIT_MARKET 配合 closePosition=true:
 自带只平仓属性，不支持reduceOnly参数
 双开模式下,LONG方向上不支持BUY; SHORT 方向上不支持SELL
 */
-func CreateOrder(symbol string, side futures.SideType) {
+func CreateOrder(symbol string, side futures.SideType, qty string) {
 	client := NewClient()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 	defer cancel()
@@ -76,7 +76,7 @@ func CreateOrder(symbol string, side futures.SideType) {
 	order, err := client.NewCreateOrderService().Symbol(symbol).
 		Side(side).
 		Type(futures.OrderTypeMarket).
-		Quantity("0.1").
+		Quantity(qty).
 		//Price("0.0030000").
 		Do(ctx)
 	if err != nil {

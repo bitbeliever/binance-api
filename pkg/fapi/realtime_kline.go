@@ -70,8 +70,8 @@ func RealTimeKline(symbol, interval string) {
 			// 穿过布林线
 			if isCrossingLine(bRes, lines[len(lines)-1]) {
 				// todo
-				log.Println("current market", toJson(bRes), toJson(lines[len(lines)-1]))
-				CreateOrder(symbol, futures.SideTypeBuy)
+				//log.Println("current market", toJson(bRes), toJson(lines[len(lines)-1]))
+				//CreateOrder(symbol, futures.SideTypeBuy)
 				return
 			}
 		}
