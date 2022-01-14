@@ -4,6 +4,5 @@ import "github.com/bitbeliever/binance-api/pkg/fapi"
 
 func main() {
 	//go fapi.WSTicker()
-	fapi.AggTrade()
-
+	fapi.AggTrade(fapi.ETH)
 }

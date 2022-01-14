@@ -19,7 +19,7 @@ func main() {
 	}
 	log.Println(st)
 	log.Println(time.UnixMilli(st.UnixMilli()))
-	lines, err := fapi.KlineHistory("ETHUSDT", "15m", 21, st.UnixMilli())
+	lines, err := fapi.KlineHistory(fapi.ETH, "15m", 21, st.UnixMilli())
 	if err != nil {
 		log.Println(err)
 		return

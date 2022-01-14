@@ -2,26 +2,17 @@ package main
 
 import (
 	"github.com/bitbeliever/binance-api/pkg/fapi"
-	"github.com/bitbeliever/binance-api/pkg/spot"
-	"time"
+	"log"
 )
 
 func main() {
-	fapi.QueryOpenOrders()
+	log.Println(fapi.QueryAllOpenOrders())
 	fapi.QueryAccountBalance()
 
-	go fapi.UserDataStreamTest()
+	go fapi.RecvUserDataStream()
 	//fapi.CreateOrder("BNBUSDT", futures.SideTypeBuy)
 
-	time.Sleep(time.Second)
-	fapi.QueryOpenOrders()
 	fapi.QueryAccountBalance()
 	fapi.QueryAccount()
-
-	//fapi.QueryOrder("BNBUSDT", 37116496894)
-	//fapi.QueryAllOrders(fapi.BNB)
-	//spot.AccountService()
-	spot.AccountService()
-	fapi.QueryAllOrders(fapi.BNB)
 	select {}
 }

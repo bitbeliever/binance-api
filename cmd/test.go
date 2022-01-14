@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/base64"
 	"encoding/hex"
+	"github.com/bitbeliever/binance-api/pkg/fapi"
 	"log"
 )
 
@@ -23,4 +24,6 @@ func main() {
 		return
 	}
 	println(base64.StdEncoding.EncodeToString(bb))
+
+	fapi.GetLogger().Println("afaasfasf")
 }

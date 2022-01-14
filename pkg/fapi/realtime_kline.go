@@ -17,9 +17,9 @@ func RealTimeKline(symbol, interval string) {
 		return
 	}
 
-	for _, line := range lines {
-		log.Println(time.UnixMilli(line.OpenTime).Format("15:04:05"), time.UnixMilli(line.CloseTime).Format("15:04:05"), line.Open, line.High, line.Low, line.Close)
-	}
+	//for _, line := range lines {
+	//	log.Println(time.UnixMilli(line.OpenTime).Format("15:04:05"), time.UnixMilli(line.CloseTime).Format("15:04:05"), line.Open, line.High, line.Low, line.Close)
+	//}
 
 	bRes := CalculateBollByFapiKline(lines)
 	log.Println("from history:", toJson(bRes))
@@ -68,37 +68,32 @@ func RealTimeKline(symbol, interval string) {
 			log.Println(toJson(bRes), lines[len(lines)-1].Close)
 
 			// 穿过布林线
-			if isCrossingLine(bRes, lines[len(lines)-1]) {
-				// todo
-				//log.Println("current market", toJson(bRes), toJson(lines[len(lines)-1]))
-				//CreateOrder(symbol, futures.SideTypeBuy)
-				return
+			//if isCrossingLine(bRes, lines[len(lines)-1]) {
+			//	// todo
+			//	log.Println("crossing... current market", toJson(bRes), toJson(lines[len(lines)-1]))
+			//	//CreateOrder(symbol, futures.SideTypeBuy)
+			//	return
+			//}
+
+			var pinfo positionInfo
+			// 区分上下穿==================
+			switch calCrossType(bRes, lines[len(lines)-1]) {
+			case ascendCross:
+				log.Println("asc crossing... current market", toJson(bRes), toJson(lines[len(lines)-1]))
+				flog.Println("asc crossing... current market", toJson(bRes), toJson(lines[len(lines)-1]))
+				CreateOrder(symbol, futures.SideTypeBuy, "0.05") // qty todo
+				pinfo.Lock()
+				pinfo.m[]
+				pinfo.Unlock()
+			case descendCross:
+				log.Println("desc crossing... current market", toJson(bRes), toJson(lines[len(lines)-1]))
+				flog.Println("asc crossing... current market", toJson(bRes), toJson(lines[len(lines)-1]))
+				CreateOrder(symbol, futures.SideTypeSell, "0.1") // qty todo
 			}
+
+			// ==================
 		}
 	}
-}
-
-func isCrossingLine(bRes bollResult, line *futures.Kline) bool {
-	MB := bRes.MB
-	_ = MB
-	UP := bRes.UP
-	DN := bRes.DN
-
-	open := Str2Float64(line.Open)
-	close := Str2Float64(line.Close)
-
-	// 穿过布林带上线
-	if (open < UP && close > UP) ||
-		(open > UP && close < UP) {
-		//log.Println("crossed upper", toJson(line))
-		return true
-	} else if (open < DN && close > DN) ||
-		(open > DN && close < DN) { // 穿过下线
-		//log.Println("crossed down", toJson(line))
-		return true
-	}
-
-	return false
 }
 
 // lineTimeData 测试实时k线数据辅助
@@ -125,8 +120,8 @@ func lineTimeData(lines []*futures.Kline) []byte {
 }
 
 // HistoryBoll 测试历史boll指标数据
-func HistoryBoll() {
-	lines, err := KlineHistory("ETHUSDT", "15m", 22, 0)
+func HistoryBoll(symbol string) {
+	lines, err := KlineHistory(symbol, "15m", 22, 0)
 	if err != nil {
 		log.Println(err)
 		return

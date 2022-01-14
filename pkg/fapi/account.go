@@ -43,22 +43,6 @@ import (
             "marginAvailable": true,   // 是否可用作联合保证金
             "updateTime": 1625474304765  //更新时间
         },
-        {
-            "asset": "BUSD",        //资产
-            "walletBalance": "103.12345678",  //余额
-            "unrealizedProfit": "0.00000000",  // 未实现盈亏
-            "marginBalance": "103.12345678",  // 保证金余额
-            "maintMargin": "0.00000000",    // 维持保证金
-            "initialMargin": "0.00000000",  // 当前所需起始保证金
-            "positionInitialMargin": "0.00000000",  // 持仓所需起始保证金(基于最新标记价格)
-            "openOrderInitialMargin": "0.00000000", // 当前挂单所需起始保证金(基于最新标记价格)
-            "crossWalletBalance": "103.12345678",  //全仓账户余额
-            "crossUnPnl": "0.00000000" // 全仓持仓未实现盈亏
-            "availableBalance": "103.12345678",       // 可用余额
-            "maxWithdrawAmount": "103.12345678",     // 最大可转出余额
-            "marginAvailable": true,   // 否可用作联合保证金
-            "updateTime": 0  // 更新时间
-           }
     ],
     "positions": [  // 头寸，将返回所有市场symbol。
         //根据用户持仓模式展示持仓方向，即单向模式下只返回BOTH持仓情况，双向模式下只返回 LONG 和 SHORT 持仓情况
@@ -117,7 +101,7 @@ func QueryAccount() *futures.Account {
 /*
 QueryAccountBalance /fapi/v2/balance 账户余额
 
-      "accountAlias": "SgsR",    // 账户唯一识别码
+        "accountAlias": "SgsR",    // 账户唯一识别码
         "asset": "USDT",        // 资产
         "balance": "122607.35137903",   // 总余额
         "crossWalletBalance": "23.72469206", // 全仓余额
@@ -126,7 +110,6 @@ QueryAccountBalance /fapi/v2/balance 账户余额
         "maxWithdrawAmount": "23.72469206",     // 最大可转出余额
         "marginAvailable": true,    // 是否可用作联合保证金
         "updateTime": 1617939110373
-    }
 */
 func QueryAccountBalance() {
 	balances, err := NewClient().NewGetBalanceService().Do(context.Background())

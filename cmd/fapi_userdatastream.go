@@ -7,5 +7,5 @@ const (
 )
 
 func main() {
-	fapi.UserDataStreamTest()
+	fapi.RecvUserDataStream()
 }

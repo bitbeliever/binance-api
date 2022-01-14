@@ -129,7 +129,7 @@ func keepListenKeyAlive(client *futures.Client, listenKey string) {
 	}
 }
 
-func UserDataStreamTest() {
+func RecvUserDataStream() {
 	//ws.KlineStream()
 	ch := make(chan *futures.WsUserDataEvent, chBuf)
 	UserDataStream(ch)
@@ -158,7 +158,7 @@ func formatPrintEvent(event *futures.WsUserDataEvent) {
 	} else if event.Event == futures.UserDataEventTypeOrderTradeUpdate {
 		// 订单更新事件 order trade update
 		log.Printf("事件 %v, Time %v TranTime %v\n", event.Event, time.UnixMilli(event.Time).Format(layout), time.UnixMilli(event.TransactionTime).Format(layout))
-		log.Printf("交易对 %v, pnl %v, tradeTime %v \n", event.OrderTradeUpdate.Symbol, event.OrderTradeUpdate.RealizedPnL, time.UnixMilli(event.OrderTradeUpdate.TradeTime))
+		log.Printf("交易对 %v, PNL [%v], tradeTime %v \n", event.OrderTradeUpdate.Symbol, event.OrderTradeUpdate.RealizedPnL, time.UnixMilli(event.OrderTradeUpdate.TradeTime))
 		log.Printf("状态 %v, 执行类型 %v, 有效方式 %v \n", event.OrderTradeUpdate.Status, event.OrderTradeUpdate.ExecutionType, event.OrderTradeUpdate.TimeInForce)
 		log.Printf("tradeID %v, 类型 %v, 方向 %v \n", event.OrderTradeUpdate.TradeID, event.OrderTradeUpdate.Type, event.OrderTradeUpdate.Side)
 		log.Printf("原始数量: %v, 原始价格: %v, 平均价格: %v \n", event.OrderTradeUpdate.OriginalQty, event.OrderTradeUpdate.OriginalPrice, event.OrderTradeUpdate.AveragePrice)

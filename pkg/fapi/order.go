@@ -117,14 +117,24 @@ func TestCreateOrder() {
     "priceProtect": false            // 是否开启条件单触发保护
   }
 */
-func QueryOpenOrders() {
-	orders, err := NewClient().NewListOpenOrdersService().Symbol("BNBUSDT").Do(context.Background())
+func QueryOpenOrders(symbol string) {
+	orders, err := NewClient().NewListOpenOrdersService().Symbol(symbol).Do(context.Background())
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
 	log.Println("open orders", toJsonIndent(orders))
+}
+
+func QueryAllOpenOrders() ([]*futures.Order, error) {
+	return NewClient().NewListOpenOrdersService().Do(context.Background())
+
+	//orders, err :=
+	//if err != nil {
+	//	log.Println(err)
+	//	return orders, err
+	//}
 }
 
 // QueryOrder 查询订单 /fapi/v1/order

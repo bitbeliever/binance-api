@@ -53,3 +53,11 @@ package fapi
 	ACK
 	RESULT
 */
+
+type crossType int
+
+const (
+	noCross      crossType = 0
+	ascendCross  crossType = 1 // 上穿
+	descendCross crossType = 2 // 下穿
+)
