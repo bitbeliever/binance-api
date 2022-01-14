@@ -25,6 +25,7 @@ func RealTimeKline(symbol, interval string) {
 	log.Println("from history:", toJson(bRes))
 
 	ch := KlineStream(symbol, interval)
+	var pinfo positionInfo
 
 	for {
 		select {
@@ -75,20 +76,24 @@ func RealTimeKline(symbol, interval string) {
 			//	return
 			//}
 
-			var pinfo positionInfo
 			// 区分上下穿==================
 			switch calCrossType(bRes, lines[len(lines)-1]) {
 			case ascendCross:
 				log.Println("asc crossing... current market", toJson(bRes), toJson(lines[len(lines)-1]))
 				flog.Println("asc crossing... current market", toJson(bRes), toJson(lines[len(lines)-1]))
 				CreateOrder(symbol, futures.SideTypeBuy, "0.05") // qty todo
-				pinfo.Lock()
-				pinfo.m[]
-				pinfo.Unlock()
+				//pinfo.Lock()
+				//pinfo.position += 0.05
+				//pinfo.Unlock()
+				go monitor(symbol, lines[len(lines)-1].Close, 10, futures.SideTypeSell)
 			case descendCross:
 				log.Println("desc crossing... current market", toJson(bRes), toJson(lines[len(lines)-1]))
 				flog.Println("asc crossing... current market", toJson(bRes), toJson(lines[len(lines)-1]))
-				CreateOrder(symbol, futures.SideTypeSell, "0.1") // qty todo
+				CreateOrder(symbol, futures.SideTypeSell, "0.05") // qty todo
+				//pinfo.Lock()
+				//pinfo.position -= 0.05
+				//pinfo.Unlock()
+				go monitor(symbol, lines[len(lines)-1].Close, 10, futures.SideTypeBuy)
 			}
 
 			// ==================

@@ -25,7 +25,7 @@ func isCrossingLine(bRes bollResult, line *futures.Kline) bool {
 	return false
 }
 
-// 计算穿针类型
+// 计算穿针类型 todo 中线
 func calCrossType(bRes bollResult, line *futures.Kline) crossType {
 	UP := bRes.UP
 	DN := bRes.DN
