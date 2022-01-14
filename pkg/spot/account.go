@@ -7,10 +7,10 @@ import (
 	"time"
 )
 
-// AccountServiceTest get account balances
-func AccountServiceTest() {
+// AccountService /api/v3/account get account balances
+func AccountService() {
 	c := NewClient()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	res, err := c.NewGetAccountService().Do(ctx)
@@ -25,4 +25,7 @@ func AccountServiceTest() {
 			log.Println(toJson(balance))
 		}
 	}
+}
+
+func QueryBalance() {
 }

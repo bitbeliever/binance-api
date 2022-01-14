@@ -10,8 +10,8 @@ import (
 )
 
 // RealTimeKline 实时获取最新k线数据和实时计算boll
-func RealTimeKline() {
-	lines, err := KlineHistory("ETHUSDT", "15m", 21, 0)
+func RealTimeKline(symbol, interval string) {
+	lines, err := KlineHistory(symbol, interval, 21, 0)
 	if err != nil {
 		log.Println(err)
 		return
@@ -24,7 +24,7 @@ func RealTimeKline() {
 	bRes := CalculateBollByFapiKline(lines)
 	log.Println("from history:", toJson(bRes))
 
-	ch := KlineStream("ETHUSDT", "15m")
+	ch := KlineStream(symbol, interval)
 
 	for {
 		select {
@@ -65,12 +65,14 @@ func RealTimeKline() {
 			//	time.UnixMilli(wsKline.StartTime).Format("15:04:05"), time.UnixMilli(wsKline.EndTime).Format("15:04:05"))
 			//continue
 			bRes = CalculateBollByFapiKline(lines)
-			log.Println(toJson(bRes))
+			log.Println(toJson(bRes), lines[len(lines)-1].Close)
 
 			// 穿过布林线
 			if isCrossingLine(bRes, lines[len(lines)-1]) {
 				// todo
-				//CreateOrder()
+				log.Println("current market", toJson(bRes), toJson(lines[len(lines)-1]))
+				CreateOrder(symbol, futures.SideTypeBuy)
+				return
 			}
 		}
 	}

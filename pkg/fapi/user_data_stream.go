@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/adshao/go-binance/v2/futures"
 	"github.com/bitbeliever/binance-api/configs"
+	"github.com/bitbeliever/binance-api/pkg/helper"
 	"log"
 	"time"
 )
@@ -49,6 +50,24 @@ func keepListenKeyAlive(client *futures.Client, listenKey string) {
 			if err := client.NewKeepaliveUserStreamService().ListenKey(listenKey).Do(context.Background()); err != nil {
 				log.Println(err)
 			}
+		}
+	}
+}
+
+func UserDataStreamTest() {
+	//ws.KlineStream()
+	ch := make(chan *futures.WsUserDataEvent, chBuf)
+	UserDataStream(ch)
+
+	for {
+		select {
+		case event := <-ch:
+			log.Println(helper.ToJson(event))
+
+			//if event.Event == futures.UserDataEventTypeAccountUpdate { // ACCOUNT_UPDATE
+			//	log.Println("futures user data")
+			//}
+
 		}
 	}
 }

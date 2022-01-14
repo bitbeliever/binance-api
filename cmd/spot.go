@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	spot.AccountServiceTest()
+	spot.AccountService()
 
 	spot.ServerTime()
 	log.Println("now", time.Now())

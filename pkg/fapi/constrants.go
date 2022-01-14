@@ -11,6 +11,7 @@ const (
 	DOG = "DOGUSDT"
 	// fil
 	FIL = "FILUSDT"
+	BNB = "BNBUSDT"
 )
 
 const (
