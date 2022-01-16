@@ -6,8 +6,11 @@ import (
 	"log"
 )
 
+func init() {
+}
+
 // AggTrade 最新合约价格
-func AggTrade(symbol string) chan *futures.WsAggTradeEvent {
+func AggTrade(symbol string) (chan *futures.WsAggTradeEvent, error) {
 	ch := make(chan *futures.WsAggTradeEvent, 512)
 	_, _, err := futures.WsAggTradeServe(symbol, func(event *futures.WsAggTradeEvent) {
 		//log.Println(time.UnixMilli(event.TradeTime).Format("15:04:05"), toJson(event))
@@ -18,13 +21,13 @@ func AggTrade(symbol string) chan *futures.WsAggTradeEvent {
 		}
 	})
 	if err != nil {
-		log.Println(err)
+		return nil, err
 	}
 
-	return ch
+	return ch, nil
 }
 
-func AggTradePrice(symbol string) chan string {
+func AggTradePrice(symbol string) (chan string, error) {
 	ch := make(chan string, 512)
 	_, _, err := futures.WsAggTradeServe(symbol, func(event *futures.WsAggTradeEvent) {
 		ch <- event.Price
@@ -34,10 +37,10 @@ func AggTradePrice(symbol string) chan string {
 		}
 	})
 	if err != nil {
-		log.Println(err)
+		return nil, err
 	}
 
-	return ch
+	return ch, nil
 }
 
 // UpdateMarginType 变换全逐仓模式 isolated || crossed  /fapi/v1/marginType
@@ -51,43 +54,17 @@ func ModifyIsolatedMargin(symbol string) {
 	//NewClient().NewUpdatePositionMarginService().Symbol(symb)
 }
 
-// LeverageBrackets Leverage 杠杆分层标准
-func LeverageBrackets() {
-	lb, err := NewClient().NewGetLeverageBracketService().Symbol(ETH).Do(context.Background())
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	log.Println(toJson(lb))
-}
-
 // ModifyLeverage 调制开仓杠杆   "maxNotionalValue": "1000000", // 当前杠杆倍数下允许的最大名义价值
 func ModifyLeverage(symbol string, leverage int) (*futures.SymbolLeverage, error) {
-	res, err := NewClient().NewChangeLeverageService().Symbol(symbol).Leverage(leverage).Do(context.Background())
-	if err != nil {
-		log.Println(err)
-		return res, nil
-	}
-
-	return res, nil
+	return NewClient().NewChangeLeverageService().Symbol(symbol).Leverage(leverage).Do(context.Background())
 }
 
 // PositionMode 查询持仓模式 "true": 双向持仓模式；"false": 单向持仓模式
-func PositionMode() {
-	mode, err := NewClient().NewGetPositionModeService().Do(context.Background())
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	log.Println(toJson(mode))
+func PositionMode() (*futures.PositionMode, error) {
+	return NewClient().NewGetPositionModeService().Do(context.Background())
 }
 
 // PositionModeChange 更改持仓模式
-func PositionModeChange(dual bool) {
-	err := NewClient().NewChangePositionModeService().DualSide(dual).Do(context.Background())
-	if err != nil {
-		log.Println(err)
-		return
-	}
+func PositionModeChange(dual bool) error {
+	return NewClient().NewChangePositionModeService().DualSide(dual).Do(context.Background())
 }

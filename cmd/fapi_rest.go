@@ -7,12 +7,12 @@ import (
 
 func main() {
 	log.Println(fapi.QueryAllOpenOrders())
-	fapi.QueryAccountBalance()
+	log.Println(fapi.QueryBalance())
 
 	go fapi.RecvUserDataStream()
 
-	fapi.QueryAccountBalance()
-	fapi.QueryAccount()
+	log.Println(fapi.QueryBalance())
+	//fapi.QueryAccount()
 	//fapi.QueryAllOrders(fapi.BNB)
 	select {}
 }

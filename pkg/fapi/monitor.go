@@ -7,7 +7,11 @@ import (
 
 // temp
 func monitor(symbol string, closePriceStr string, sub float64, side futures.SideType) {
-	ch := AggTradePrice(symbol)
+	ch, err := AggTradePrice(symbol)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	for {
 		select {

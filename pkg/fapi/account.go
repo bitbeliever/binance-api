@@ -3,7 +3,6 @@ package fapi
 import (
 	"context"
 	"github.com/adshao/go-binance/v2/futures"
-	"log"
 	"time"
 )
 
@@ -76,24 +75,23 @@ func QueryAccount() (*futures.Account, error) {
 		return nil, err
 	}
 
-	//log.Println(toJson(res))
-	for _, asset := range res.Assets {
-		if Str2Float64(asset.WalletBalance) != 0 {
-			log.Println("account asset", toJson(asset))
-		}
-	}
-	for _, position := range res.Positions {
-		if Str2Float64(position.PositionAmt) != 0 {
-			log.Println("account position", toJson(position))
-		}
-
-	}
+	//for _, asset := range res.Assets {
+	//	if Str2Float64(asset.WalletBalance) != 0 {
+	//		log.Println("account asset", toJson(asset))
+	//	}
+	//}
+	//for _, position := range res.Positions {
+	//	if Str2Float64(position.PositionAmt) != 0 {
+	//		log.Println("account position", toJson(position))
+	//	}
+	//
+	//}
 
 	return res, nil
 }
 
 /*
-QueryAccountBalance /fapi/v2/balance 账户余额
+QueryBalance /fapi/v2/balance 账户余额
 
         "accountAlias": "SgsR",    // 账户唯一识别码
         "asset": "USDT",        // 资产
@@ -105,21 +103,41 @@ QueryAccountBalance /fapi/v2/balance 账户余额
         "marginAvailable": true,    // 是否可用作联合保证金
         "updateTime": 1617939110373
 */
-func QueryAccountBalance() {
+func QueryBalance() ([]*futures.Balance, error) {
 	balances, err := NewClient().NewGetBalanceService().Do(context.Background())
 	if err != nil {
-		log.Println(err)
-		return
+		return nil, err
 	}
 
+	var ret []*futures.Balance
 	for _, balance := range balances {
 		if Str2Float64(balance.Balance) != 0 {
-			log.Println("balance", toJson(balance))
+			ret = append(ret, balance)
 		}
 	}
-	//log.Println(toJsonIndent(balances))
+	return ret, nil
 }
 
+/*
+QueryAccountPositions
+   {
+       "symbol": "BTCUSDT",  // 交易对
+       "initialMargin": "0",   // 当前所需起始保证金(基于最新标记价格)
+       "maintMargin": "0", //维持保证金
+       "unrealizedProfit": "0.00000000",  // 持仓未实现盈亏
+       "positionInitialMargin": "0",  // 持仓所需起始保证金(基于最新标记价格)
+       "openOrderInitialMargin": "0",  // 当前挂单所需起始保证金(基于最新标记价格)
+       "leverage": "100",  // 杠杆倍率
+       "isolated": true,  // 是否是逐仓模式
+       "entryPrice": "0.00000",  // 持仓成本价
+       "maxNotional": "250000",  // 当前杠杆下用户可用的最大名义价值
+       "bidNotional": "0",  // 买单净值，忽略
+       "askNotional": "0",  // 买单净值，忽略
+       "positionSide": "BOTH",  // 持仓方向
+       "positionAmt": "0",      // 持仓数量
+       "updateTime": 0         // 更新时间
+   }
+*/
 func QueryAccountPositions() ([]*futures.AccountPosition, error) {
 	account, err := QueryAccount()
 	if err != nil {
@@ -134,6 +152,26 @@ func QueryAccountPositions() ([]*futures.AccountPosition, error) {
 	}
 	return positions, nil
 }
+
+/*
+QueryAccountAssets
+        {
+            "asset": "USDT",        //资产
+            "walletBalance": "23.72469206",  //余额
+            "unrealizedProfit": "0.00000000",  // 未实现盈亏
+            "marginBalance": "23.72469206",  // 保证金余额
+            "maintMargin": "0.00000000",    // 维持保证金
+            "initialMargin": "0.00000000",  // 当前所需起始保证金
+            "positionInitialMargin": "0.00000000",  // 持仓所需起始保证金(基于最新标记价格)
+            "openOrderInitialMargin": "0.00000000", // 当前挂单所需起始保证金(基于最新标记价格)
+            "crossWalletBalance": "23.72469206",  //全仓账户余额
+            "crossUnPnl": "0.00000000" // 全仓持仓未实现盈亏
+            "availableBalance": "23.72469206",       // 可用余额
+            "maxWithdrawAmount": "23.72469206",     // 最大可转出余额
+            "marginAvailable": true,   // 是否可用作联合保证金
+            "updateTime": 1625474304765  //更新时间
+        },
+*/
 func QueryAccountAssets() ([]*futures.AccountAsset, error) {
 	account, err := QueryAccount()
 	if err != nil {
