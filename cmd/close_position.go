@@ -12,7 +12,7 @@ func main() {
 		ateLimitOrder1m":"1"}
 
 	*/
-	//fapi.CreateOrder(fapi.ETH, futures.SideTypeBuy, "0.01")
+	//fapi.CreateOrder(fapi.ETH, futures.SideTypeSell, "0.01")
 	//fapi.QueryOpenOrders()
 
 	fapi.QueryAccountBalance()

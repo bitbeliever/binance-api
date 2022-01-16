@@ -25,7 +25,7 @@ func RealTimeKline(symbol, interval string) {
 	log.Println("from history:", toJson(bRes))
 
 	ch := KlineStream(symbol, interval)
-	var pinfo positionInfo
+	//var pinfo positionInfo
 
 	for {
 		select {

@@ -33,15 +33,15 @@ func calCrossType(bRes bollResult, line *futures.Kline) crossType {
 	open := Str2Float64(line.Open)
 	close := Str2Float64(line.Close)
 
-	// 下到上 穿过布林带上线
+	// 上升 穿过布林带上线
 	if open < UP && close > UP {
 		return ascendCross
 	} else if open > UP && close < UP {
 		//log.Println("crossed upper", toJson(line))
 		return descendCross
-	} else if open < DN && close > DN {
+	} else if open < DN && close > DN { // 上升 穿过下线
 		return ascendCross
-	} else if open > DN && close < DN { // 穿过下线
+	} else if open > DN && close < DN { // 下降 穿过下线
 		//log.Println("crossed down", toJson(line))
 		return descendCross
 	}

@@ -149,7 +149,7 @@ func formatPrintEvent(event *futures.WsUserDataEvent) {
 		log.Printf("事件 %v, Time %v TranTime %v\n", event.Event, time.UnixMilli(event.Time).Format(layout), time.UnixMilli(event.TransactionTime).Format(layout))
 		//log.Printf("Reason %v\n", event.AccountUpdate.Reason)
 		for _, balance := range event.AccountUpdate.Balances {
-			log.Printf("资产 %v, 余额 %v, 除去逐仓仓位保证金的钱包余额 %v, 该变量 %v\n", balance.Asset, balance.Balance, balance.CrossWalletBalance, balance.ChangeBalance)
+			log.Printf("资产 %v, 余额 %v, 除去逐仓仓位保证金的钱包余额 %v, 改变量 %v\n", balance.Asset, balance.Balance, balance.CrossWalletBalance, balance.ChangeBalance)
 		}
 		for _, position := range event.AccountUpdate.Positions {
 			log.Printf("交易对 %v, 仓位 %v, 方向 %v, 费前累计损益 %v, 持仓未实现盈亏 %v, 入仓价格 %v, 保证金模式 %v, 逐仓保证金: %v\n", position.Symbol, position.Amount, position.Side, position.AccumulatedRealized, position.UnrealizedPnL, position.EntryPrice, position.MarginType, position.IsolatedWallet)
