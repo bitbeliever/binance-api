@@ -1,7 +1,9 @@
 package main
 
 import (
+	"github.com/adshao/go-binance/v2/futures"
 	"github.com/bitbeliever/binance-api/pkg/fapi"
+	"log"
 )
 
 func main() {
@@ -17,5 +19,11 @@ func main() {
 
 	fapi.QueryAccountBalance()
 	fapi.QueryAccount()
-	fapi.QueryOpenOrders(fapi.ETH)
+
+	log.Println(fapi.CreateOrder(fapi.ETH, futures.SideTypeBuy, "0.001"))
+
+	//log.Println(fapi.ModifyLeverage(fapi.ETH, 100))
+
+	fapi.QueryAccountBalance()
+	fapi.QueryAccount()
 }

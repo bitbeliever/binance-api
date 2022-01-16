@@ -157,7 +157,7 @@ func formatPrintEvent(event *futures.WsUserDataEvent) {
 		log.Println("================================================================================")
 	} else if event.Event == futures.UserDataEventTypeOrderTradeUpdate {
 		// 订单更新事件 order trade update
-		log.Printf("事件 %v, Time %v TranTime %v\n", event.Event, time.UnixMilli(event.Time).Format(layout), time.UnixMilli(event.TransactionTime).Format(layout))
+		log.Printf("事件 %v, 时间 %v TranTime %v\n", event.Event, time.UnixMilli(event.Time).Format(layout), time.UnixMilli(event.TransactionTime).Format(layout))
 		log.Printf("交易对 %v, PNL [%v], tradeTime %v \n", event.OrderTradeUpdate.Symbol, event.OrderTradeUpdate.RealizedPnL, time.UnixMilli(event.OrderTradeUpdate.TradeTime))
 		log.Printf("状态 %v, 执行类型 %v, 有效方式 %v \n", event.OrderTradeUpdate.Status, event.OrderTradeUpdate.ExecutionType, event.OrderTradeUpdate.TimeInForce)
 		log.Printf("tradeID %v, 类型 %v, 方向 %v \n", event.OrderTradeUpdate.TradeID, event.OrderTradeUpdate.Type, event.OrderTradeUpdate.Side)
@@ -165,8 +165,20 @@ func formatPrintEvent(event *futures.WsUserDataEvent) {
 		log.Printf("末次成交量: %v, 末次成交价格: %v, 累计成交量: %v \n", event.OrderTradeUpdate.LastFilledQty, event.OrderTradeUpdate.LastFilledPrice, event.OrderTradeUpdate.AccumulatedFilledQty)
 		log.Printf("买单净值 %v, 卖单净值 %v, 手续费数量 %v \n", event.OrderTradeUpdate.BidsNotional, event.OrderTradeUpdate.AsksNotional, event.OrderTradeUpdate.Commission)
 		log.Println("================================================================================")
-	} else {
-		// 其他事件
+	} else if event.Event == futures.UserDataEventTypeMarginCall {
+		// 追加保证金事件
 		log.Println("other event occurs", toJson(event))
+	} else if event.Event == futures.UserDataEventTypeAccountConfigUpdate {
+		// 杠杆倍数等账户配置 更新推送
+		log.Printf("事件 %v, 时间 %v \n", event.Event, time.UnixMilli(event.Time).Format(layout))
+		log.Printf("交易对 %v, 杠杆倍数: %v \n", event.AccountConfigUpdate.Symbol, event.AccountConfigUpdate.Leverage)
+		log.Printf("联合保证金状态: [nodata] \n")
+
+	} else if event.Event == futures.UserDataEventTypeListenKeyExpired {
+		// listenKey 过期推送
+		log.Println("key expired at", time.UnixMilli(event.Time).Format(layout))
+
+	} else {
+		log.Println("ERR unknown event", toJson(event))
 	}
 }

@@ -10,9 +10,9 @@ func main() {
 	fapi.QueryAccountBalance()
 
 	go fapi.RecvUserDataStream()
-	//fapi.CreateOrder("BNBUSDT", futures.SideTypeBuy)
 
 	fapi.QueryAccountBalance()
 	fapi.QueryAccount()
+	//fapi.QueryAllOrders(fapi.BNB)
 	select {}
 }

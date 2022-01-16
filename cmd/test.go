@@ -22,8 +22,10 @@ func main() {
 	if err != nil {
 		log.Println(err)
 		return
-	}
-	println(base64.StdEncoding.EncodeToString(bb))
+		println(base64.StdEncoding.EncodeToString(bb))
+		fapi.GetLogger().Println("afaasfasf")
 
-	fapi.GetLogger().Println("afaasfasf")
+	}
+
+	fapi.PositionMode()
 }

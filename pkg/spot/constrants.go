@@ -1,4 +1,4 @@
-package spotws
+package spot
 
 const (
 	// 莱特币

@@ -1,7 +1,6 @@
-package spotws
+package spot
 
 import (
-	"encoding/json"
 	"github.com/adshao/go-binance/v2"
 	"log"
 )
@@ -41,15 +40,4 @@ func KlineStream() {
 		}
 	}
 
-}
-
-func toJson(v interface{}) string {
-	b, err := json.Marshal(v)
-	if err != nil {
-		panic(err)
-
-		//log.Println(err)
-		//return ""
-	}
-	return string(b)
 }

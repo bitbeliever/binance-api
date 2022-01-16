@@ -68,7 +68,25 @@ STOP_MARKET, TAKE_PROFIT_MARKET 配合 closePosition=true:
 自带只平仓属性，不支持reduceOnly参数
 双开模式下,LONG方向上不支持BUY; SHORT 方向上不支持SELL
 */
-func CreateOrder(symbol string, side futures.SideType, qty string) {
+/*
+marginType 保证金模式: 全仓/逐仓 crossed/isolated
+multiAssetsMargin 联合保证金模式: 单币种/跨币种
+杠杆
+positionSide 持仓方向: 单向持仓模式下非必填，默认且仅可填BOTH;在双向持仓模式下必填,且仅可选择 LONG 或 SHORT
+*/
+func CreateOrder(symbol string, side futures.SideType, qty string) (*futures.CreateOrderResponse, error) {
+	// todo set once
+	lev, err := ModifyLeverage(symbol, 100)
+	if err != nil {
+		return nil, err
+	}
+	log.Println("modified leverage", toJson(lev))
+
+	// 变换保证金模式 全仓
+	if err := UpdateMarginType(symbol, futures.MarginTypeCrossed); err != nil {
+		return nil, err
+	}
+
 	client := NewClient()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 	defer cancel()
@@ -77,16 +95,23 @@ func CreateOrder(symbol string, side futures.SideType, qty string) {
 		Side(side).
 		Type(futures.OrderTypeMarket).
 		Quantity(qty).
-		//Price("0.0030000").
+		PositionSide(futures.PositionSideTypeBoth). // 持仓方向 单向必填默认为BOTH
+		WorkingType(futures.WorkingTypeContractPrice). // stopPrice 触发类型: MARK_PRICE(标记价格), CONTRACT_PRICE(合约最新价). 默认 CONTRACT_PRICE
+		//StopPrice(). // 触发价 STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET 需要此参数
+		//Price("0.0030000"). // 委托价格
+		//ClosePosition(). //true, false；触发后全部平仓，仅支持STOP_MARKET和TAKE_PROFIT_MARKET；不与quantity合用；自带只平仓效果，不与reduceOnly 合用
+		//PriceProtect() // 条件单触发保护："TRUE","FALSE", 默认"FALSE". 仅 STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET 需要此参数
 		Do(ctx)
 	if err != nil {
-		log.Println(err)
+		return nil, err
 	}
 
-	log.Println("created order", toJson(order))
+	return order, nil
 }
 
-func TestCreateOrder() {
+// CreateOrderBothSide 双向持仓
+func CreateOrderBothSide() {
+
 }
 
 // QueryOpenOrders /fapi/v1/openOrders 查询当前全部挂单
@@ -128,7 +153,7 @@ func QueryOpenOrders(symbol string) {
 }
 
 func QueryAllOpenOrders() ([]*futures.Order, error) {
-	return NewClient().NewListOpenOrdersService().Do(context.Background())
+	return NewClient().NewListOpenOrdersService().Symbol(ETH).Do(context.Background())
 
 	//orders, err :=
 	//if err != nil {
