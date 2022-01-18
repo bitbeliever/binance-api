@@ -1,50 +1,110 @@
 package fapi
 
-import "github.com/adshao/go-binance/v2/futures"
+import (
+	"github.com/adshao/go-binance/v2/futures"
+	"log"
+	"math"
+	"strconv"
+)
 
-func isCrossingLine(bRes bollResult, line *futures.Kline) bool {
-	MB := bRes.MB
-	_ = MB
-	UP := bRes.UP
-	DN := bRes.DN
-
-	open := Str2Float64(line.Open)
-	close := Str2Float64(line.Close)
-
-	// 穿过布林带上线
-	if (open < UP && close > UP) ||
-		(open > UP && close < UP) {
-		//log.Println("crossed upper", toJson(line))
-		return true
-	} else if (open < DN && close > DN) ||
-		(open > DN && close < DN) { // 穿过下线
-		//log.Println("crossed down", toJson(line))
-		return true
+// V1 穿过布林线
+func v1Cross(symbol string, bRes bollResult, lastKline *futures.Kline) error {
+	if isCrossingLine(bRes, lastKline) {
+		// todo
+		log.Println("crossing... current market", toJson(bRes), toJson(lastKline))
+		//CreateOrder(symbol, futures.SideTypeBuy)
+		return nil
 	}
 
-	return false
+	return nil
 }
 
-// 计算穿针类型 todo 中线
-func calCrossType(bRes bollResult, line *futures.Kline) crossType {
-	UP := bRes.UP
-	DN := bRes.DN
+// V2 区分上下穿==================
+func distUpperLowerCross(symbol string, bRes bollResult, lastKline *futures.Kline) error {
 
-	open := Str2Float64(line.Open)
-	close := Str2Float64(line.Close)
+	switch calCrossType(bRes, lastKline) {
+	case ascendCross:
+		log.Println("asc crossing... current market", toJson(bRes), toJson(lastKline))
+		flog.Println("asc crossing... current market", toJson(bRes), toJson(lastKline))
+		CreateOrder(symbol, futures.SideTypeBuy, "0.05") // qty todo
+		//pinfo.Lock()
+		//pinfo.position += 0.05
+		//pinfo.Unlock()
+		go monitor(symbol, lastKline.Close, 10, futures.SideTypeSell)
+	case descendCross:
+		log.Println("desc crossing... current market", toJson(bRes), toJson(lastKline))
+		flog.Println("asc crossing... current market", toJson(bRes), toJson(lastKline))
+		CreateOrder(symbol, futures.SideTypeSell, "0.05") // qty todo
+		//pinfo.Lock()
+		//pinfo.position -= 0.05
+		//pinfo.Unlock()
+		go monitor(symbol, lastKline.Close, 10, futures.SideTypeBuy)
+	}
+	return nil
+}
 
-	// 上升 穿过布林带上线
-	if open < UP && close > UP {
-		return ascendCross
-	} else if open > UP && close < UP {
-		//log.Println("crossed upper", toJson(line))
-		return descendCross
-	} else if open < DN && close > DN { // 上升 穿过下线
-		return ascendCross
-	} else if open > DN && close < DN { // 下降 穿过下线
-		//log.Println("crossed down", toJson(line))
-		return descendCross
+// v3 中线双开策略
+// V3 穿过中线, 双开 有未平的仓========================================
+func mbDoubleOpenPosition(symbol string, bRes bollResult, lastKline *futures.Kline) error {
+	if !bollCross(bRes, lastKline) {
+		return nil
 	}
 
-	return noCross
+	//log.Println("crossing:", toJson(bRes), lastKline.Close)
+
+	positions, err := QueryAccountPositions()
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	if bollCrossMB(bRes, lastKline) {
+		// 有仓位, 不开新仓 todo
+		if len(positions) != 0 {
+			log.Println("positions exists")
+			return nil
+		}
+		// open opsition
+		log.Println("达到中线======== to open opsi", toJson(bRes), lastKline.Close)
+		orderBuy, err := CreateOrderBothSide(symbol, futures.SideTypeBuy, futures.PositionSideTypeLong, calcQty(10, lastKline.Close))
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		orderSell, err := CreateOrderBothSide(symbol, futures.SideTypeBuy, futures.PositionSideTypeShort, calcQty(10, lastKline.Close))
+		if err != nil { // todo close
+			log.Println(err)
+			return err
+		}
+
+		log.Println("buy order", toJson(orderBuy))
+		log.Println("close order", toJson(orderSell))
+		principal.orderLong = orderBuy
+		principal.orderShort = orderSell
+	} else if Str2Float64(lastKline.Close) >= bRes.UP { // 触碰上线 平多单 止盈
+		if len(positions) == 0 {
+			return nil
+		}
+
+		if err := closePosition(principal.orderLong, principal.closeLong.PositionSide); err != nil {
+			return err
+		}
+
+	} else if Str2Float64(lastKline.Close) <= bRes.DN { // 触碰下线
+		if len(positions) == 0 {
+			return nil
+		}
+
+		if err := closePosition(principal.orderShort, principal.closeShort.PositionSide); err != nil {
+			return err
+		}
+
+	}
+
+	return nil
+}
+
+func calcQty(spend float64, closeStr string) string {
+	price := Str2Float64(closeStr)
+	return strconv.FormatFloat(math.Round(spend/price)/100, 'f', 10, 64)
 }

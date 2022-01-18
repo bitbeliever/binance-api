@@ -6,8 +6,55 @@ import (
 	"log"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
+
+var (
+	principal totalBalance
+)
+
+type totalBalance struct {
+	mu sync.RWMutex
+	// usdt
+	balance float64
+
+	// 双开
+	orderLong, orderShort,
+	closeLong, closeShort *futures.CreateOrderResponse
+
+	stopRate   float64 // 止损 0.1 for now
+	takeProfit float64 // 止盈率
+}
+
+func (tb totalBalance) stopBalance() float64 {
+	tb.mu.RLock()
+	defer tb.mu.RUnlock()
+
+	return tb.balance * tb.stopRate
+}
+
+func init() {
+	if err := os.Remove("line.txt"); err != nil {
+		log.Println(err)
+	}
+
+	balances, err := QueryBalance()
+	must(err)
+
+	if len(balances) != 0 {
+		// todo
+		for _, balance := range balances {
+			if balance.Asset == "USDT" {
+				principal.balance = Str2Float64(balance.CrossWalletBalance)
+			}
+		}
+	}
+
+	principal.stopRate = 0.1
+	log.Println("初始本金:", principal.balance)
+	log.Println("principal", principal)
+}
 
 // RealTimeKline 实时获取最新k线数据和实时计算boll
 func RealTimeKline(symbol, interval string) {
@@ -22,6 +69,7 @@ func RealTimeKline(symbol, interval string) {
 	//}
 
 	bRes := CalculateBollByFapiKline(lines)
+	writeToLineTestFile(lines)
 	log.Println("from history:", toJson(bRes))
 
 	ch := KlineStream(symbol, interval)
@@ -50,15 +98,9 @@ func RealTimeKline(symbol, interval string) {
 					Volume:    wsKline.Volume,
 					CloseTime: wsKline.EndTime,
 				})
+				lastKline = lines[len(lines)-1]
 
-				/////////// test
-				f, err := os.OpenFile("line.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-				_, err = f.Write(lineTimeData(lines))
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				/////////// test
+				writeToLineTestFile(lines)
 			}
 
 			//log.Println("sub", wsKline.StartTime-lastKline.CloseTime)
@@ -66,37 +108,13 @@ func RealTimeKline(symbol, interval string) {
 			//	time.UnixMilli(wsKline.StartTime).Format("15:04:05"), time.UnixMilli(wsKline.EndTime).Format("15:04:05"))
 			//continue
 			bRes = CalculateBollByFapiKline(lines)
-			log.Println(toJson(bRes), lines[len(lines)-1].Close)
+			//log.Println(toJson(bRes), lastKline.Close)
 
-			// 穿过布林线
-			//if isCrossingLine(bRes, lines[len(lines)-1]) {
-			//	// todo
-			//	log.Println("crossing... current market", toJson(bRes), toJson(lines[len(lines)-1]))
-			//	//CreateOrder(symbol, futures.SideTypeBuy)
-			//	return
-			//}
-
-			// 区分上下穿==================
-			switch calCrossType(bRes, lines[len(lines)-1]) {
-			case ascendCross:
-				log.Println("asc crossing... current market", toJson(bRes), toJson(lines[len(lines)-1]))
-				flog.Println("asc crossing... current market", toJson(bRes), toJson(lines[len(lines)-1]))
-				CreateOrder(symbol, futures.SideTypeBuy, "0.05") // qty todo
-				//pinfo.Lock()
-				//pinfo.position += 0.05
-				//pinfo.Unlock()
-				go monitor(symbol, lines[len(lines)-1].Close, 10, futures.SideTypeSell)
-			case descendCross:
-				log.Println("desc crossing... current market", toJson(bRes), toJson(lines[len(lines)-1]))
-				flog.Println("asc crossing... current market", toJson(bRes), toJson(lines[len(lines)-1]))
-				CreateOrder(symbol, futures.SideTypeSell, "0.05") // qty todo
-				//pinfo.Lock()
-				//pinfo.position -= 0.05
-				//pinfo.Unlock()
-				go monitor(symbol, lines[len(lines)-1].Close, 10, futures.SideTypeBuy)
+			// v3 double open position
+			if err := mbDoubleOpenPosition(symbol, bRes, lastKline); err != nil {
+				log.Println(err)
+				return
 			}
-
-			// ==================
 		}
 	}
 }
@@ -122,6 +140,14 @@ func lineTimeData(lines []*futures.Kline) []byte {
 	}
 	b = append(b, '\n')
 	return b
+}
+
+func writeToLineTestFile(lines []*futures.Kline) {
+	f, err := os.OpenFile("line.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0755)
+	_, err = f.Write(lineTimeData(lines))
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 // HistoryBoll 测试历史boll指标数据

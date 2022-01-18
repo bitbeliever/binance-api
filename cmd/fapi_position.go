@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/adshao/go-binance/v2/futures"
 	"github.com/bitbeliever/binance-api/pkg/fapi"
 	"github.com/bitbeliever/binance-api/pkg/helper"
 )
@@ -22,8 +21,8 @@ func main() {
 	//helper.JsonLog(fapi.QueryAccountAssets())
 	//helper.JsonLog(fapi.QueryAccountPositions())
 
-	helper.JsonLog(fapi.ModifyLeverage(fapi.BNB, 75))
-	helper.JsonLog(fapi.CreateOrder(fapi.BNB, futures.SideTypeSell, "0.05"))
+	//helper.JsonLog(fapi.ModifyLeverage(fapi.BNB, 75))
+	//helper.JsonLog(fapi.CreateOrder(fapi.BNB, futures.SideTypeSell, "0.05"))
 	//helper.JsonLog(fapi.ModifyLeverage(fapi.ETH, 100))
 
 	helper.JsonLog(fapi.QueryBalance())

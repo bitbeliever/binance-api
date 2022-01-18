@@ -13,6 +13,7 @@ type cfg struct {
 	Debug         bool
 	KlineInterval string
 	Key           key `toml:"key"`
+	MaxLeverage   bool
 }
 
 type key struct {

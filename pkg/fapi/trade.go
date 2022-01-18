@@ -2,6 +2,7 @@ package fapi
 
 import (
 	"context"
+	"fmt"
 	"github.com/adshao/go-binance/v2/futures"
 	"log"
 )
@@ -59,6 +60,33 @@ func ModifyLeverage(symbol string, leverage int) (*futures.SymbolLeverage, error
 	return NewClient().NewChangeLeverageService().Symbol(symbol).Leverage(leverage).Do(context.Background())
 }
 
+// LeverageBracket 杠杆分层标准 /fapi/v1/leverageBracket
+func LeverageBracket(symbol string) ([]*futures.LeverageBracket, error) {
+	return NewClient().NewGetLeverageBracketService().Symbol(symbol).Do(context.Background())
+}
+
+// LeverageSetMax 设置该交易对最大杠杆 todo 杠杆分层
+func LeverageSetMax(symbol string) error {
+	brackets, err := LeverageBracket(symbol)
+	if err != nil {
+		return err
+	}
+	if len(brackets) == 0 {
+		return fmt.Errorf("error brackets data %v", brackets)
+	}
+	if brackets[0].Symbol != symbol {
+		return fmt.Errorf("symbol incorrespond %v %v", symbol, brackets[0].Symbol)
+	}
+
+	leverage, err := NewClient().NewChangeLeverageService().Symbol(symbol).Leverage(brackets[0].Brackets[0].InitialLeverage).Do(context.Background())
+	if err != nil {
+		return err
+	}
+	log.Println("杠杆设置最大:", toJson(leverage))
+
+	return nil
+}
+
 // PositionMode 查询持仓模式 "true": 双向持仓模式；"false": 单向持仓模式
 func PositionMode() (*futures.PositionMode, error) {
 	return NewClient().NewGetPositionModeService().Do(context.Background())
@@ -67,4 +95,8 @@ func PositionMode() (*futures.PositionMode, error) {
 // PositionModeChange 更改持仓模式
 func PositionModeChange(dual bool) error {
 	return NewClient().NewChangePositionModeService().DualSide(dual).Do(context.Background())
+}
+
+func getLatestPrice(symbol string) {
+
 }

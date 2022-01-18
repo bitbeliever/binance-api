@@ -10,4 +10,11 @@ func main() {
 
 	mode, err := fapi.PositionMode()
 	log.Println(helper.ToJson(mode), err)
+
+	bracket, err := fapi.LeverageBracket(fapi.LTC)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println(helper.ToJson(bracket))
 }

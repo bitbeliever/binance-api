@@ -1,4 +1,6 @@
 
+# todo
+MaxLeverage=true
 Debug=true
 Emu=false
 KlineInterval="15m"
