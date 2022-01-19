@@ -7,12 +7,21 @@ import (
 )
 
 func main() {
-	p, _ := fapi.QueryAccountPositions()
-	log.Println("positions", helper.ToJson(p))
-	a, _ := fapi.QueryAccountAssets()
+	p, err := fapi.QueryAccountPositions()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println("positions", helper.ToJsonIndent(p))
+	a, err := fapi.QueryAccountAssets()
+	if err != nil {
+		log.Println(err)
+		return
+	}
 	log.Println("assets", helper.ToJson(a))
 
-	const symbol = fapi.BNB
+	const symbol = fapi.LTC
+	log.Println("doing symbol:", symbol)
 
 	// 全仓/逐仓设置
 	mode, err := fapi.PositionMode()

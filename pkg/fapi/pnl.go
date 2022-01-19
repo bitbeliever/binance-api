@@ -39,6 +39,7 @@ func pnlMonitor(entry float64, qty string, ch chan float64) float64 {
 	return 0
 }
 
+// 单个仓位pnl
 // 未实现盈亏(PNL) = 头寸大小* 订单方向* (最新价格- 开仓价格)
 // todo positionSize == positionAmt?
 func pnl(positionSize float64, sideType futures.PositionSideType, entry float64, ch chan float64) {

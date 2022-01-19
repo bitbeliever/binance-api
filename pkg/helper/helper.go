@@ -14,13 +14,21 @@ func ToJson(v interface{}) string {
 	return string(b)
 }
 
+func ToJsonIndent(v interface{}) string {
+	b, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
+
 func JsonLog(data interface{}, err error) {
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	b, err := json.Marshal(data)
+	b, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		log.Println(err)
 		return

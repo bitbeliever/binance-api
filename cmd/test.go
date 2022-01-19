@@ -17,4 +17,5 @@ func main() {
 		return
 	}
 	log.Println(helper.ToJson(bracket))
+	fapi.Test()
 }

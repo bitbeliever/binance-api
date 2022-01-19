@@ -1,10 +1,9 @@
 package fapi
 
 import (
+	"fmt"
 	"github.com/adshao/go-binance/v2/futures"
 	"log"
-	"math"
-	"strconv"
 )
 
 // V1 穿过布林线
@@ -45,6 +44,8 @@ func distUpperLowerCross(symbol string, bRes bollResult, lastKline *futures.Klin
 
 // v3 中线双开策略
 // V3 穿过中线, 双开 有未平的仓========================================
+// todo yesterday: 达到中线后, 空/多判断, 开其中不存在的(可能多单或者空单只存其一)
+// todo 本金10%
 func mbDoubleOpenPosition(symbol string, bRes bollResult, lastKline *futures.Kline) error {
 	if !bollCross(bRes, lastKline) {
 		return nil
@@ -52,6 +53,12 @@ func mbDoubleOpenPosition(symbol string, bRes bollResult, lastKline *futures.Kli
 
 	//log.Println("crossing:", toJson(bRes), lastKline.Close)
 
+	// 止损已经挂起, 直接返回
+	if principal.stopLossFn != nil {
+		return nil
+	}
+
+	// !!todo query too many times cause error
 	positions, err := QueryAccountPositions()
 	if err != nil {
 		log.Println(err)
@@ -61,24 +68,26 @@ func mbDoubleOpenPosition(symbol string, bRes bollResult, lastKline *futures.Kli
 	if bollCrossMB(bRes, lastKline) {
 		// 有仓位, 不开新仓 todo
 		if len(positions) != 0 {
-			log.Println("positions exists")
+			//log.Println("positions exists")
 			return nil
 		}
-		// open opsition
-		log.Println("达到中线======== to open opsi", toJson(bRes), lastKline.Close)
-		orderBuy, err := CreateOrderBothSide(symbol, futures.SideTypeBuy, futures.PositionSideTypeLong, calcQty(10, lastKline.Close))
+		// open position
+		log.Println("达到中线======== to open position", toJson(bRes), lastKline.Close)
+		// buy long
+		orderBuy, err := CreateOrderDual(symbol, futures.SideTypeBuy, futures.PositionSideTypeLong, calcQty(10, lastKline.Close))
 		if err != nil {
 			log.Println(err)
 			return err
 		}
-		orderSell, err := CreateOrderBothSide(symbol, futures.SideTypeBuy, futures.PositionSideTypeShort, calcQty(10, lastKline.Close))
+		// short sell
+		orderSell, err := CreateOrderDual(symbol, futures.SideTypeSell, futures.PositionSideTypeShort, calcQty(10, lastKline.Close))
 		if err != nil { // todo close
 			log.Println(err)
 			return err
 		}
 
 		log.Println("buy order", toJson(orderBuy))
-		log.Println("close order", toJson(orderSell))
+		log.Println("sell order", toJson(orderSell))
 		principal.orderLong = orderBuy
 		principal.orderShort = orderSell
 	} else if Str2Float64(lastKline.Close) >= bRes.UP { // 触碰上线 平多单 止盈
@@ -86,7 +95,16 @@ func mbDoubleOpenPosition(symbol string, bRes bollResult, lastKline *futures.Kli
 			return nil
 		}
 
-		if err := closePosition(principal.orderLong, principal.closeLong.PositionSide); err != nil {
+		// 止盈
+		// 还未平仓
+		if principal.orderLong != nil {
+			if err := closePosition(principal.orderLong); err != nil {
+				return err
+			}
+			principal.orderLong = nil
+		}
+		// 止损 todo
+		if err := closePosition(principal.orderShort); err != nil {
 			return err
 		}
 
@@ -95,7 +113,16 @@ func mbDoubleOpenPosition(symbol string, bRes bollResult, lastKline *futures.Kli
 			return nil
 		}
 
-		if err := closePosition(principal.orderShort, principal.closeShort.PositionSide); err != nil {
+		// 止盈
+		// 还未平仓
+		if principal.orderShort != nil {
+			if err := closePosition(principal.orderShort); err != nil {
+				return err
+			}
+			principal.orderShort = nil
+		}
+		// 止损todo
+		if err := closePosition(principal.orderLong); err != nil {
 			return err
 		}
 
@@ -106,5 +133,12 @@ func mbDoubleOpenPosition(symbol string, bRes bollResult, lastKline *futures.Kli
 
 func calcQty(spend float64, closeStr string) string {
 	price := Str2Float64(closeStr)
-	return strconv.FormatFloat(math.Round(spend/price)/100, 'f', 10, 64)
+	return fmt.Sprintf("%.2f", spend/price)
+	//spend / price
+	//return strconv.FormatFloat(math.Round(spend/price*100)/100, 'f', 10, 64)
+}
+
+func Test() {
+	log.Println(calcQty(10, "3136.32"))
+	log.Println(10 / 3136.32)
 }

@@ -8,8 +8,8 @@ const (
 	// 以太坊
 	ETH = "ETHUSDT"
 	// 狗狗
-	DOG = "DOGUSDT"
-	// fil
+	DOG = "DOGEUSDT"
+	// file
 	FIL = "FILUSDT"
 	BNB = "BNBUSDT"
 )

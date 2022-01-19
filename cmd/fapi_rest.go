@@ -2,17 +2,13 @@ package main
 
 import (
 	"github.com/bitbeliever/binance-api/pkg/fapi"
-	"log"
+	"github.com/bitbeliever/binance-api/pkg/helper"
 )
 
 func main() {
-	log.Println(fapi.QueryAllOpenOrders())
-	log.Println(fapi.QueryBalance())
-
-	go fapi.RecvUserDataStream()
-
-	log.Println(fapi.QueryBalance())
+	helper.JsonLog(fapi.QueryAccountPositions())
 	//fapi.QueryAccount()
 	//fapi.QueryAllOrders(fapi.BNB)
+
 	select {}
 }

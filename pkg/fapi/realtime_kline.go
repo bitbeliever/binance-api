@@ -21,10 +21,12 @@ type totalBalance struct {
 
 	// 双开
 	orderLong, orderShort,
-	closeLong, closeShort *futures.CreateOrderResponse
+	closeLongOrder, closeShortOrder *futures.CreateOrderResponse
 
 	stopRate   float64 // 止损 0.1 for now
 	takeProfit float64 // 止盈率
+
+	stopLossFn func()
 }
 
 func (tb totalBalance) stopBalance() float64 {
