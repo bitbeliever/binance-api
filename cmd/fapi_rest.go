@@ -9,6 +9,4 @@ func main() {
 	helper.JsonLog(fapi.QueryAccountPositions())
 	//fapi.QueryAccount()
 	//fapi.QueryAllOrders(fapi.BNB)
-
-	select {}
 }

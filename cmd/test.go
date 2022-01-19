@@ -1,21 +1,21 @@
 package main
 
 import (
-	"github.com/bitbeliever/binance-api/pkg/fapi"
-	"github.com/bitbeliever/binance-api/pkg/helper"
-	"log"
+	"fmt"
 )
 
 func main() {
 
-	mode, err := fapi.PositionMode()
-	log.Println(helper.ToJson(mode), err)
+	var a st
+	fmt.Println(a)
+	a.chang()
+	fmt.Println(a)
+}
 
-	bracket, err := fapi.LeverageBracket(fapi.LTC)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	log.Println(helper.ToJson(bracket))
-	fapi.Test()
+type st struct {
+	a int
+}
+
+func (s *st) chang() {
+	s.a = 1
 }

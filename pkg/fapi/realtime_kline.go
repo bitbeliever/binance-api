@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	principal totalBalance
+	principal *totalBalance
 )
 
 type totalBalance struct {
@@ -29,11 +29,17 @@ type totalBalance struct {
 	stopLossFn func()
 }
 
-func (tb totalBalance) stopBalance() float64 {
+func (tb *totalBalance) stopBalance() float64 {
 	tb.mu.RLock()
 	defer tb.mu.RUnlock()
 
 	return tb.balance * tb.stopRate
+}
+
+func (tb *totalBalance) getBalance() float64 {
+	tb.mu.RLock()
+	defer tb.mu.RUnlock()
+	return tb.balance
 }
 
 func init() {
@@ -43,6 +49,7 @@ func init() {
 
 	balances, err := QueryBalance()
 	must(err)
+	principal = &totalBalance{}
 
 	if len(balances) != 0 {
 		// todo
@@ -75,6 +82,7 @@ func RealTimeKline(symbol, interval string) {
 	log.Println("from history:", toJson(bRes))
 
 	ch := KlineStream(symbol, interval)
+	var s doubleOpenStrategy
 	//var pinfo positionInfo
 
 	for {
@@ -105,15 +113,20 @@ func RealTimeKline(symbol, interval string) {
 				writeToLineTestFile(lines)
 			}
 
-			//log.Println("sub", wsKline.StartTime-lastKline.CloseTime)
-			//log.Println("wrong kline", time.UnixMilli(lastKline.OpenTime).Format("15:04:05"), time.UnixMilli(lastKline.CloseTime).Format("15:04:05"),
-			//	time.UnixMilli(wsKline.StartTime).Format("15:04:05"), time.UnixMilli(wsKline.EndTime).Format("15:04:05"))
-			//continue
 			bRes = CalculateBollByFapiKline(lines)
 			//log.Println(toJson(bRes), lastKline.Close)
 
+			// 必须平所有的仓
+			//pos, err := QueryAccountPositions()
+			//must(err)
+			//if len(pos) != 0 {
+			//	log.Println("positions should be closed")
+			//	return
+			//}
+			////
+
 			// v3 double open position
-			if err := mbDoubleOpenPosition(symbol, bRes, lastKline); err != nil {
+			if err := s.mbDoubleOpenPosition(symbol, bRes, lastKline); err != nil {
 				log.Println(err)
 				return
 			}

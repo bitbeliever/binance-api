@@ -18,10 +18,8 @@ func main() {
 	//helper.JsonLog(fapi.QueryAccountAssets())
 	helper.JsonLog(fapi.QueryAccountPositions())
 
-	//fapi.CloseAllPositions()
 	//closeOp()
-	//
-	//helper.JsonLog(fapi.QueryAccountPositions())
+	//fapi.CloseAllPositions()
 	helper.JsonLog(fapi.QueryAccountPositions())
 }
 

@@ -42,11 +42,21 @@ func distUpperLowerCross(symbol string, bRes bollResult, lastKline *futures.Klin
 	return nil
 }
 
-// v3 中线双开策略
+type strategy interface {
+	Do(symbol string, bRes bollResult, lastKline *futures.Kline) error
+	StopLoss() error
+	TakeProfit() error
+}
+
+type doubleOpenStrategy struct {
+	opened bool
+}
+
+// v3 中线双开策略, for now, 不能有未平的仓位
 // V3 穿过中线, 双开 有未平的仓========================================
 // todo yesterday: 达到中线后, 空/多判断, 开其中不存在的(可能多单或者空单只存其一)
 // todo 本金10%
-func mbDoubleOpenPosition(symbol string, bRes bollResult, lastKline *futures.Kline) error {
+func (s *doubleOpenStrategy) mbDoubleOpenPosition(symbol string, bRes bollResult, lastKline *futures.Kline) error {
 	if !bollCross(bRes, lastKline) {
 		return nil
 	}
@@ -58,17 +68,14 @@ func mbDoubleOpenPosition(symbol string, bRes bollResult, lastKline *futures.Kli
 		return nil
 	}
 
-	// !!todo query too many times cause error
-	positions, err := QueryAccountPositions()
-	if err != nil {
-		log.Println(err)
-		return err
-	}
+	//positions, err := QueryAccountPositions()
+	//if err != nil {
+	//	log.Println(err)
+	//	return err
+	//}
 
 	if bollCrossMB(bRes, lastKline) {
-		// 有仓位, 不开新仓 todo
-		if len(positions) != 0 {
-			//log.Println("positions exists")
+		if s.opened {
 			return nil
 		}
 		// open position
@@ -90,42 +97,46 @@ func mbDoubleOpenPosition(symbol string, bRes bollResult, lastKline *futures.Kli
 		log.Println("sell order", toJson(orderSell))
 		principal.orderLong = orderBuy
 		principal.orderShort = orderSell
+		s.opened = true
 	} else if Str2Float64(lastKline.Close) >= bRes.UP { // 触碰上线 平多单 止盈
-		if len(positions) == 0 {
-			return nil
-		}
 
 		// 止盈
 		// 还未平仓
 		if principal.orderLong != nil {
-			if err := closePosition(principal.orderLong); err != nil {
+			if err := closePositionByOrderResp(principal.orderLong); err != nil {
 				return err
 			}
 			principal.orderLong = nil
+			log.Println("达到上线======== ", toJson(bRes), lastKline.Close)
 		}
 		// 止损 todo
-		if err := closePosition(principal.orderShort); err != nil {
-			return err
+		if principal.orderShort != nil {
+			if err := closePositionByOrderResp(principal.orderShort); err != nil {
+				return err
+			}
+			log.Println("达到下线======== ", toJson(bRes), lastKline.Close)
+			principal.orderShort = nil
 		}
 
+		s.opened = false
 	} else if Str2Float64(lastKline.Close) <= bRes.DN { // 触碰下线
-		if len(positions) == 0 {
-			return nil
-		}
-
-		// 止盈
 		// 还未平仓
 		if principal.orderShort != nil {
-			if err := closePosition(principal.orderShort); err != nil {
+			if err := closePositionByOrderResp(principal.orderShort); err != nil {
 				return err
 			}
 			principal.orderShort = nil
 		}
+
 		// 止损todo
-		if err := closePosition(principal.orderLong); err != nil {
-			return err
+		if principal.orderLong != nil {
+			if err := closePositionByOrderResp(principal.orderLong); err != nil {
+				return err
+			}
+			principal.orderLong = nil
 		}
 
+		s.opened = false
 	}
 
 	return nil

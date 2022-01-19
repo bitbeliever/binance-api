@@ -125,10 +125,10 @@ func calCrossType(bRes bollResult, line *futures.Kline) crossType {
 func bollCrossMB(bRes bollResult, line *futures.Kline) bool {
 	open := Str2Float64(line.Open)
 	close := Str2Float64(line.Close)
-	return (open < bRes.MB && close >= bRes.MB) ||
-		(open > bRes.MB && close <= bRes.MB)
-	//return (open < bRes.MB && (close+1) >= bRes.MB) ||
-	//	(open > bRes.MB && (close-1) <= bRes.MB)
+	//return (open < bRes.MB && close >= bRes.MB) ||
+	//	(open > bRes.MB && close <= bRes.MB)
+	return (open < bRes.MB && (close+1) >= bRes.MB) ||
+		(open > bRes.MB && (close-1) <= bRes.MB)
 }
 
 func bollCross(bRes bollResult, line *futures.Kline) bool {

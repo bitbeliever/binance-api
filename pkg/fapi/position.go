@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/adshao/go-binance/v2/futures"
 	"log"
+	"math"
+	"time"
 )
 
 // 平仓
@@ -16,11 +18,12 @@ Close position:
 	Close long position: positionSide=LONG, side=SELL
 	Close short position: positionSide=SHORT, side=BUY
 */
-func closePosition(order *futures.CreateOrderResponse) error {
+func closePositionByOrderResp(order *futures.CreateOrderResponse) error {
 	//closeOrder, err := CreateOrderDual(order.Symbol, futures.SideTypeSell, reversePositionSide(order.PositionSide), order.OrigQuantity)
 	//closeOrder, err := CreateOrderDual(order.Symbol, futures.SideTypeSell, order.PositionSide, order.OrigQuantity)
 	closeOrder, err := CreateOrderDual(order.Symbol, reverseSideType(order.Side), order.PositionSide, order.OrigQuantity)
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 	//if positionSide == futures.PositionSideTypeLong {
@@ -32,6 +35,24 @@ func closePosition(order *futures.CreateOrderResponse) error {
 	//}
 
 	log.Println("to close positions", toJson(closeOrder))
+	return nil
+}
+
+func closePosition(position *futures.AccountPosition) error {
+	var side futures.SideType
+	var amt string
+	if position.PositionAmt[0] == '-' {
+		side = futures.SideTypeBuy
+		amt = position.PositionAmt[1:]
+	} else {
+		side = futures.SideTypeSell
+		amt = position.PositionAmt
+	}
+	_, err := CreateOrderDual(position.Symbol, side, position.PositionSide, amt)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -72,18 +93,33 @@ func CloseAllPositions() {
 	}
 
 	for _, position := range pos {
-		var side futures.SideType
-		var amt string
-		if position.PositionAmt[0] == '-' {
-			side = futures.SideTypeBuy
-			amt = position.PositionAmt[1:]
-		} else {
-			side = futures.SideTypeSell
-			amt = position.PositionAmt
-		}
-		_, err := CreateOrderDual(position.Symbol, side, position.PositionSide, amt)
-		if err != nil {
+		if err := closePosition(position); err != nil {
 			log.Println(err)
+		}
+	}
+}
+
+// 仓位监控
+func positionMonitor() {
+	ticker := time.NewTicker(time.Second)
+	for {
+		select {
+		case <-ticker.C:
+			pos, err := QueryAccountPositions()
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			for _, p := range pos {
+				pnl := Str2Float64(p.UnrealizedProfit)
+				if pnl < 0 && math.Abs(pnl) > principal.stopBalance() {
+					log.Println("stop loss reach")
+					if err := closePosition(p); err != nil {
+						log.Println(err)
+						return
+					}
+				}
+			}
 		}
 	}
 }

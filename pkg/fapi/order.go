@@ -19,7 +19,7 @@ quantity	DECIMAL	NO	下单数量,使用closePosition不支持此参数。
 price	DECIMAL	NO	委托价格
 newClientOrderId	STRING	NO	用户自定义的订单号，不可以重复出现在挂单中。如空缺系统会自动赋值。必须满足正则规则 ^[\.A-Z\:/a-z0-9_-]{1,36}$
 stopPrice	DECIMAL	NO	触发价, 仅 STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET 需要此参数
-closePosition	STRING	NO	true, false；触发后全部平仓，仅支持STOP_MARKET和TAKE_PROFIT_MARKET；不与quantity合用；自带只平仓效果，不与reduceOnly 合用
+closePositionByOrderResp	STRING	NO	true, false；触发后全部平仓，仅支持STOP_MARKET和TAKE_PROFIT_MARKET；不与quantity合用；自带只平仓效果，不与reduceOnly 合用
 activationPrice	DECIMAL	NO	追踪止损激活价格，仅TRAILING_STOP_MARKET 需要此参数, 默认为下单当前市场价格(支持不同workingType)
 callbackRate	DECIMAL	NO	追踪止损回调比例，可取值范围[0.1, 5],其中 1代表1% ,仅TRAILING_STOP_MARKET 需要此参数
 timeInForce	ENUM	NO	有效方法
@@ -60,7 +60,7 @@ newOrderRespType 如果传 RESULT:
 
 MARKET 订单将直接返回成交结果；
 配合使用特殊 timeInForce 的 LIMIT 订单将直接返回成交或过期拒绝结果。
-STOP_MARKET, TAKE_PROFIT_MARKET 配合 closePosition=true:
+STOP_MARKET, TAKE_PROFIT_MARKET 配合 closePositionByOrderResp=true:
 
 条件单触发依照上述条件单触发逻辑
 条件触发后，平掉当时持有所有多头仓位(若为卖单)或当时持有所有空头仓位(若为买单)
@@ -81,7 +81,7 @@ STOP_MARKET, TAKE_PROFIT_MARKET 配合 closePosition=true:
     "positionSide": "SHORT", // 持仓方向
     "status": "NEW", // 订单状态
     "stopPrice": "0", // 触发价，对`TRAILING_STOP_MARKET`无效
-    "closePosition": false,   // 是否条件全平仓
+    "closePositionByOrderResp": false,   // 是否条件全平仓
     "symbol": "BTCUSDT", // 交易对
     "timeInForce": "GTC", // 有效方法
     "type": "TRAILING_STOP_MARKET", // 订单类型
@@ -115,7 +115,7 @@ positionSide 持仓方向: 单向持仓模式下非必填，默认且仅可填BO
 //		WorkingType(futures.WorkingTypeContractPrice). // stopPrice 触发类型: MARK_PRICE(标记价格), CONTRACT_PRICE(合约最新价). 默认 CONTRACT_PRICE
 //		//StopPrice().                                   // 触发价 STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET 需要此参数
 //		//Price("0.0030000"). // 委托价格
-//		//closePosition(true). //true, false；触发后全部平仓，仅支持STOP_MARKET和TAKE_PROFIT_MARKET；不与quantity合用；自带只平仓效果，不与reduceOnly 合用
+//		//closePositionByOrderResp(true). //true, false；触发后全部平仓，仅支持STOP_MARKET和TAKE_PROFIT_MARKET；不与quantity合用；自带只平仓效果，不与reduceOnly 合用
 //		//PriceProtect() // 条件单触发保护："TRUE","FALSE", 默认"FALSE". 仅 STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET 需要此参数
 //		Do(ctx)
 //	if err != nil {
@@ -153,7 +153,7 @@ func CreateOrderDual(symbol string, side futures.SideType, positionSide futures.
 		WorkingType(futures.WorkingTypeContractPrice). // stopPrice 触发类型: MARK_PRICE(标记价格), CONTRACT_PRICE(合约最新价). 默认 CONTRACT_PRICE
 		//StopPrice().                                   // 触发价 STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET 需要此参数
 		//Price("0.0030000"). // 委托价格
-		//closePosition(true). //true, false；触发后全部平仓，仅支持STOP_MARKET和TAKE_PROFIT_MARKET；不与quantity合用；自带只平仓效果，不与reduceOnly 合用
+		//closePositionByOrderResp(true). //true, false；触发后全部平仓，仅支持STOP_MARKET和TAKE_PROFIT_MARKET；不与quantity合用；自带只平仓效果，不与reduceOnly 合用
 		//PriceProtect() // 条件单触发保护："TRUE","FALSE", 默认"FALSE". 仅 STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET 需要此参数
 		Do(ctx)
 	if err != nil {
@@ -179,7 +179,7 @@ func CreateOrderDual(symbol string, side futures.SideType, positionSide futures.
     "positionSide": "SHORT", // 持仓方向
     "status": "NEW",                    // 订单状态
     "stopPrice": "9300",                    // 触发价，对`TRAILING_STOP_MARKET`无效
-    "closePosition": false,   // 是否条件全平仓
+    "closePositionByOrderResp": false,   // 是否条件全平仓
     "symbol": "BTCUSDT",                // 交易对
     "time": 1579276756075,              // 订单时间
     "timeInForce": "GTC",               // 有效方法
