@@ -29,10 +29,12 @@ type totalBalance struct {
 	stopLossFn func()
 }
 
-func (tb *totalBalance) stopBalance() float64 {
+// 止损的pnl
+func (tb *totalBalance) stopPNL() float64 {
 	tb.mu.RLock()
 	defer tb.mu.RUnlock()
 
+	return 0.01
 	return tb.balance * tb.stopRate
 }
 
@@ -78,12 +80,13 @@ func init() {
 	principal.stopRate = 0.1
 	principal.openPositionRate = 0.1
 	log.Println("初始本金:", principal.balance)
-	log.Println("stopLimit:", principal.stopBalance())
+	log.Println("stopPNL:", principal.stopPNL())
 	log.Println("principal", principal)
 }
 
 // RealTimeKline 实时获取最新k线数据和实时计算boll
 func RealTimeKline(symbol, interval string) {
+	log.Printf("实时数据 symbol: %v, interval %v \n: ", symbol, interval)
 	lines, err := KlineHistory(symbol, interval, 21, 0)
 	if err != nil {
 		log.Println(err)
@@ -100,6 +103,8 @@ func RealTimeKline(symbol, interval string) {
 
 	ch := KlineStream(symbol, interval)
 	var s doubleOpenStrategy
+	// 设置止盈 call only once
+	go s.monitorOrderTP(s.subscribeUpper(), s.subscribeLower())
 	//var pinfo positionInfo
 
 	for {
@@ -132,15 +137,6 @@ func RealTimeKline(symbol, interval string) {
 
 			bRes = CalculateBollByFapiKline(lines)
 			//log.Println(toJson(bRes), lastKline.Close)
-
-			// 必须平所有的仓
-			//pos, err := QueryAccountPositions()
-			//must(err)
-			//if len(pos) != 0 {
-			//	log.Println("positions should be closed")
-			//	return
-			//}
-			////
 
 			// v3 double open position
 			//if err := s.mbDoubleOpenPosition(symbol, bRes, lastKline); err != nil {

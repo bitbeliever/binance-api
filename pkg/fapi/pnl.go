@@ -43,8 +43,8 @@ func calcPNL(positionSize float64, sideType futures.PositionSideType, entry floa
 
 // 单个仓位, 监控, 止损pnl
 // todo 通过 ORDER_TRADE_UPDATE 进行监控
-func watchPNLStopLimit(p *futures.AccountPosition, stop chan struct{}) {
-	ch, err := AggTradePrice(LTC)
+func watchPNLStopLimit(order *futures.AccountPosition, stop chan struct{}) {
+	ch, err := AggTradePrice(order.Symbol)
 	if err != nil {
 		log.Println(err)
 		return
@@ -53,12 +53,12 @@ func watchPNLStopLimit(p *futures.AccountPosition, stop chan struct{}) {
 	for {
 		select {
 		case curPriceStr := <-ch:
-			pnl := calcPNL(Str2Float64(p.PositionAmt), p.PositionSide, Str2Float64(p.EntryPrice), Str2Float64(curPriceStr))
+			pnl := calcPNL(Str2Float64(order.PositionAmt), order.PositionSide, Str2Float64(order.EntryPrice), Str2Float64(curPriceStr))
 			//log.Println("current pnl", pnl)
 			// 触发止损
-			if pnl < 0 && math.Abs(pnl) > principal.stopBalance() {
-				log.Printf("触发止损 pnl: %v \t stopBalance %v \n", pnl, principal.stopBalance())
-				if err := closePosition(p); err != nil {
+			if pnl < 0 && math.Abs(pnl) > principal.stopPNL() {
+				log.Printf("触发止损 pnl: %v \t stopPNL %v \n", pnl, principal.stopPNL())
+				if err := closePosition(order); err != nil {
 					log.Println(err)
 				}
 				return

@@ -131,6 +131,7 @@ func CreateOrder(symbol string, side futures.SideType, qty string) (*futures.Cre
 		Type(futures.OrderTypeMarket).
 		Quantity(qty).
 		PositionSide(futures.PositionSideTypeBoth).
+		NewOrderResponseType(futures.NewOrderRespTypeRESULT).
 		Do(context.Background())
 	if err != nil {
 		return nil, err
@@ -151,6 +152,7 @@ func CreateOrderDual(symbol string, side futures.SideType, positionSide futures.
 		Quantity(qty).
 		PositionSide(positionSide).                    // 持仓方向 单向必填默认为BOTH
 		WorkingType(futures.WorkingTypeContractPrice). // stopPrice 触发类型: MARK_PRICE(标记价格), CONTRACT_PRICE(合约最新价). 默认 CONTRACT_PRICE
+		NewOrderResponseType(futures.NewOrderRespTypeRESULT).
 		//StopPrice().                                   // 触发价 STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET 需要此参数
 		//Price("0.0030000"). // 委托价格
 		//closePositionByOrderResp(true). //true, false；触发后全部平仓，仅支持STOP_MARKET和TAKE_PROFIT_MARKET；不与quantity合用；自带只平仓效果，不与reduceOnly 合用

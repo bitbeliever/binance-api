@@ -23,7 +23,6 @@ func closePositionByOrderResp(order *futures.CreateOrderResponse) error {
 	//closeOrder, err := CreateOrderDual(order.Symbol, futures.SideTypeSell, order.PositionSide, order.OrigQuantity)
 	closeOrder, err := CreateOrderDual(order.Symbol, reverseSideType(order.Side), order.PositionSide, order.OrigQuantity)
 	if err != nil {
-		log.Println(err)
 		return err
 	}
 	//if positionSide == futures.PositionSideTypeLong {
@@ -112,7 +111,7 @@ func positionMonitor() {
 			}
 			for _, p := range pos {
 				pnl := Str2Float64(p.UnrealizedProfit)
-				if pnl < 0 && math.Abs(pnl) > principal.stopBalance() {
+				if pnl < 0 && math.Abs(pnl) > principal.stopPNL() {
 					log.Println("stop loss reach")
 					if err := closePosition(p); err != nil {
 						log.Println(err)

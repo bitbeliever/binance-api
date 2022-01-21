@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/bitbeliever/binance-api/configs"
 	"github.com/bitbeliever/binance-api/pkg/fapi"
 	"github.com/bitbeliever/binance-api/pkg/helper"
 	"log"
@@ -21,7 +22,6 @@ func main() {
 	log.Println("assets", helper.ToJson(a))
 
 	const symbol = fapi.LTC
-	log.Println("doing symbol:", symbol)
 
 	// 全仓/逐仓设置
 	mode, err := fapi.PositionMode()
@@ -43,5 +43,5 @@ func main() {
 		return
 	}
 
-	fapi.RealTimeKline(symbol, "15m")
+	fapi.RealTimeKline(symbol, configs.Cfg.KlineInterval)
 }
