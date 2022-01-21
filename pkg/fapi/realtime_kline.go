@@ -5,7 +5,6 @@ import (
 	"github.com/adshao/go-binance/v2/futures"
 	"log"
 	"os"
-	"strings"
 	"sync"
 	"time"
 )
@@ -17,7 +16,8 @@ var (
 type totalBalance struct {
 	mu sync.RWMutex
 	// usdt
-	balance float64
+	balance          float64
+	openPositionRate float64 // 单次下单率 0.1
 
 	// 双开
 	orderLong, orderShort,
@@ -42,6 +42,20 @@ func (tb *totalBalance) getBalance() float64 {
 	return tb.balance
 }
 
+func (tb *totalBalance) singleBetBalance() float64 {
+	tb.mu.RLock()
+	tb.mu.RUnlock()
+
+	return tb.balance * tb.openPositionRate
+}
+
+func (tb *totalBalance) updateBalance(balance float64) {
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
+
+	tb.balance = balance
+}
+
 func init() {
 	if err := os.Remove("line.txt"); err != nil {
 		log.Println(err)
@@ -60,8 +74,11 @@ func init() {
 		}
 	}
 
+	// todo
 	principal.stopRate = 0.1
+	principal.openPositionRate = 0.1
 	log.Println("初始本金:", principal.balance)
+	log.Println("stopLimit:", principal.stopBalance())
 	log.Println("principal", principal)
 }
 
@@ -97,7 +114,7 @@ func RealTimeKline(symbol, interval string) {
 				lastKline.Close = wsKline.Close
 				//lines[len(lines)-1] = lastKline
 			} else { // new cycle
-				log.Println("next kline", time.UnixMilli(lastKline.CloseTime).Format("15:04:05"), time.UnixMilli(wsKline.StartTime).Format("15:04:05"), strings.Repeat("===", 50))
+				//log.Println("next kline", time.UnixMilli(lastKline.CloseTime).Format("15:04:05"), time.UnixMilli(wsKline.StartTime).Format("15:04:05"), strings.Repeat("===", 50))
 				lines = lines[1:]
 				lines = append(lines, &futures.Kline{
 					OpenTime:  wsKline.StartTime,
@@ -126,7 +143,8 @@ func RealTimeKline(symbol, interval string) {
 			////
 
 			// v3 double open position
-			if err := s.mbDoubleOpenPosition(symbol, bRes, lastKline); err != nil {
+			//if err := s.mbDoubleOpenPosition(symbol, bRes, lastKline); err != nil {
+			if err := s.mbDoubleOpenPositionByChannel(symbol, bRes, lastKline); err != nil {
 				log.Println(err)
 				return
 			}

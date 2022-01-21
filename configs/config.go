@@ -14,6 +14,8 @@ type cfg struct {
 	KlineInterval string
 	Key           key `toml:"key"`
 	MaxLeverage   bool
+	StopLimit     float64 // 止损
+	TakeProfit    float64 // 止盈
 }
 
 type key struct {

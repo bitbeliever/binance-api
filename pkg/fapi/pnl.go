@@ -25,24 +25,9 @@ import (
 股本回报率(ROE%) = 以USDT计价的未实现盈亏(PNL) / 开仓保证金= ((最新价格- 开仓价格) * 订单方向* 规模) / (头寸金额* 合约倍数* 标记价格* 初始保证金比率(IMR))
 订单方向：多头订单为1，空头订单为-1
 */
-func pnlMonitor(entry float64, qty string, ch chan float64) float64 {
-	//entry := Str2Float64(position.EntryPrice)
-	var pnl float64
-	_ = pnl
-	for {
-		select {
-		case curPrice := <-ch:
-			pnl = (curPrice - entry) * Str2Float64(qty)
-		}
-	}
 
-	return 0
-}
-
-// 单个仓位pnl
-// 未实现盈亏(PNL) = 头寸大小* 订单方向* (最新价格- 开仓价格)
-// todo positionSize == positionAmt?
-func pnl(positionSize float64, sideType futures.PositionSideType, entry float64, ch chan float64) {
+// 计算PNL: 未实现盈亏(PNL) = 头寸大小* 订单方向* (最新价格- 开仓价格)
+func calcPNL(positionSize float64, sideType futures.PositionSideType, entry float64, price float64) float64 {
 	var side float64
 	if sideType == futures.PositionSideTypeLong {
 		side = 1
@@ -50,18 +35,49 @@ func pnl(positionSize float64, sideType futures.PositionSideType, entry float64,
 		side = -1
 	} else {
 		log.Println("wrong side type", sideType)
+		return 0
+	}
+
+	return positionSize * side * (price - entry)
+}
+
+// 单个仓位, 监控, 止损pnl
+// todo 通过 ORDER_TRADE_UPDATE 进行监控
+func watchPNLStopLimit(p *futures.AccountPosition, stop chan struct{}) {
+	ch, err := AggTradePrice(LTC)
+	if err != nil {
+		log.Println(err)
 		return
 	}
 
 	for {
 		select {
-		case curPrice := <-ch:
-			pnl := positionSize * side * (curPrice - entry)
+		case curPriceStr := <-ch:
+			pnl := calcPNL(Str2Float64(p.PositionAmt), p.PositionSide, Str2Float64(p.EntryPrice), Str2Float64(curPriceStr))
+			//log.Println("current pnl", pnl)
+			// 触发止损
 			if pnl < 0 && math.Abs(pnl) > principal.stopBalance() {
-				// todo stop
-
+				log.Printf("触发止损 pnl: %v \t stopBalance %v \n", pnl, principal.stopBalance())
+				if err := closePosition(p); err != nil {
+					log.Println(err)
+				}
+				return
 			}
+		case <-stop:
+			return
 		}
 	}
+}
 
+// pnl 对比测试
+func ComparePNLTest() {
+	pos, err := QueryAccountPositions()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	p := pos[1]
+	log.Println("position un_profit", p.UnrealizedProfit)
+	//calcPNL(Str2Float64(p.PositionAmt), p.PositionSide, Str2Float64(p.EntryPrice), ch)
 }

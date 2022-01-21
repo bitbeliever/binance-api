@@ -1,5 +1,7 @@
 
 # todo
+TakeProfit=1.0
+StopLimit=1.2
 MaxLeverage=true
 Debug=true
 Emu=false

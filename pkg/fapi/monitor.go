@@ -44,3 +44,28 @@ func monitor(symbol string, closePriceStr string, sub float64, side futures.Side
 		}
 	}
 }
+
+func monitorOrderTP(order *futures.CreateOrderResponse, chUpper, chLower chan struct{}) {
+	for {
+		select {
+		case <-chUpper:
+			if order.PositionSide == futures.PositionSideTypeLong {
+				log.Println("触发多单止盈")
+				if err := closePositionByOrderResp(order); err != nil {
+					log.Println(err)
+				}
+				return
+			}
+
+		case <-chLower:
+			if order.PositionSide == futures.PositionSideTypeShort {
+				if err := closePositionByOrderResp(order); err != nil {
+					log.Println(err)
+				}
+				log.Println("触发空单止盈")
+				return
+			}
+		}
+
+	}
+}

@@ -8,19 +8,17 @@ import (
 )
 
 func main() {
-	//helper.JsonLog(fapi.ModifyLeverage(fapi.BNB, 75))
-	//helper.JsonLog(fapi.CreateOrder(fapi.LTC, futures.SideTypeSell, "0.05"))
-	//helper.JsonLog(fapi.ModifyLeverage(fapi.ETH, 100))
-
-	//closeOp()
 
 	//helper.JsonLog(fapi.QueryBalance())
 	//helper.JsonLog(fapi.QueryAccountAssets())
 	helper.JsonLog(fapi.QueryAccountPositions())
 
 	//closeOp()
-	//fapi.CloseAllPositions()
+	fapi.CloseAllPositions()
 	helper.JsonLog(fapi.QueryAccountPositions())
+	helper.JsonLog(fapi.QueryBalance())
+
+	//fapi.ComparePNLTest()
 }
 
 func closeOp() {

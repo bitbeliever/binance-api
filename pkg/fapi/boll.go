@@ -122,6 +122,7 @@ func calCrossType(bRes bollResult, line *futures.Kline) crossType {
 }
 
 // 穿过boll带中线
+// !!todo +-1 for testing
 func bollCrossMB(bRes bollResult, line *futures.Kline) bool {
 	open := Str2Float64(line.Open)
 	close := Str2Float64(line.Close)
@@ -133,7 +134,10 @@ func bollCrossMB(bRes bollResult, line *futures.Kline) bool {
 
 func bollCross(bRes bollResult, line *futures.Kline) bool {
 	price := Str2Float64(line.Close)
-	return (price >= bRes.UP) ||
-		(price <= bRes.DN) ||
+	// !!todo for testing
+	return (price >= bRes.UP-0.5) ||
+		(price <= bRes.DN+0.5) ||
+		//return (price >= bRes.UP) ||
+		//	(price <= bRes.DN) ||
 		bollCrossMB(bRes, line)
 }

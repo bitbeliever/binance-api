@@ -50,12 +50,14 @@ type strategy interface {
 
 type doubleOpenStrategy struct {
 	opened bool
+
+	upperChans []chan struct{}
+	lowerChans []chan struct{}
 }
 
 // v3 中线双开策略, for now, 不能有未平的仓位
 // V3 穿过中线, 双开 有未平的仓========================================
 // todo yesterday: 达到中线后, 空/多判断, 开其中不存在的(可能多单或者空单只存其一)
-// todo 本金10%
 func (s *doubleOpenStrategy) mbDoubleOpenPosition(symbol string, bRes bollResult, lastKline *futures.Kline) error {
 	if !bollCross(bRes, lastKline) {
 		return nil
@@ -81,13 +83,13 @@ func (s *doubleOpenStrategy) mbDoubleOpenPosition(symbol string, bRes bollResult
 		// open position
 		log.Println("达到中线======== to open position", toJson(bRes), lastKline.Close)
 		// buy long
-		orderBuy, err := CreateOrderDual(symbol, futures.SideTypeBuy, futures.PositionSideTypeLong, calcQty(10, lastKline.Close))
+		orderBuy, err := CreateOrderDual(symbol, futures.SideTypeBuy, futures.PositionSideTypeLong, calcQty(principal.singleBetBalance(), lastKline.Close))
 		if err != nil {
 			log.Println(err)
 			return err
 		}
 		// short sell
-		orderSell, err := CreateOrderDual(symbol, futures.SideTypeSell, futures.PositionSideTypeShort, calcQty(10, lastKline.Close))
+		orderSell, err := CreateOrderDual(symbol, futures.SideTypeSell, futures.PositionSideTypeShort, calcQty(principal.singleBetBalance(), lastKline.Close))
 		if err != nil { // todo close
 			log.Println(err)
 			return err
@@ -147,6 +149,85 @@ func calcQty(spend float64, closeStr string) string {
 	return fmt.Sprintf("%.2f", spend/price)
 	//spend / price
 	//return strconv.FormatFloat(math.Round(spend/price*100)/100, 'f', 10, 64)
+}
+
+func (s *doubleOpenStrategy) subscribeUpper() chan struct{} {
+	ch := make(chan struct{}, 256)
+	s.upperChans = append(s.upperChans, ch)
+	return ch
+}
+
+func (s *doubleOpenStrategy) subscribeLower() chan struct{} {
+	ch := make(chan struct{})
+	s.lowerChans = append(s.lowerChans, ch)
+	return ch
+}
+
+func (s *doubleOpenStrategy) pubUpper() {
+	for _, ch := range s.upperChans {
+		ch <- struct{}{}
+	}
+}
+
+func (s *doubleOpenStrategy) pubLower() {
+	for _, ch := range s.lowerChans {
+		ch <- struct{}{}
+	}
+}
+
+// by signal
+func (s *doubleOpenStrategy) mbDoubleOpenPositionByChannel(symbol string, bRes bollResult, lastKline *futures.Kline) error {
+	if !bollCross(bRes, lastKline) {
+		return nil
+	}
+
+	if bollCrossMB(bRes, lastKline) {
+		if s.opened {
+			return nil
+		}
+		// open position
+		log.Println("达到中线======== to open position", toJson(bRes), lastKline.Close)
+		// buy long
+		orderBuy, err := CreateOrderDual(symbol, futures.SideTypeBuy, futures.PositionSideTypeLong, calcQty(principal.singleBetBalance(), lastKline.Close))
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		// short sell
+		orderSell, err := CreateOrderDual(symbol, futures.SideTypeSell, futures.PositionSideTypeShort, calcQty(principal.singleBetBalance(), lastKline.Close))
+		if err != nil { // todo close
+			log.Println(err)
+			return err
+		}
+
+		log.Println("buy order", toJson(orderBuy))
+		log.Println("sell order", toJson(orderSell))
+		go monitorOrderTP(orderBuy, s.subscribeUpper(), s.subscribeLower())  // 设置止盈
+		go monitorOrderTP(orderSell, s.subscribeUpper(), s.subscribeLower()) // 设置止盈
+
+		pos, err := QueryAccountPositions()
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		for _, p := range pos {
+			if p.PositionSide == futures.PositionSideTypeLong { // 多单, stop by upper
+				go watchPNLStopLimit(p, s.subscribeUpper()) // 设置止损
+			} else if p.PositionSide == futures.PositionSideTypeShort { // 空单, stop by lower
+				go watchPNLStopLimit(p, s.subscribeLower()) // 设置止损
+			}
+		}
+
+		s.opened = true
+	} else if Str2Float64(lastKline.Close) >= bRes.UP-0.5 { // 触碰上线 平多单 止盈
+		s.pubUpper()
+		s.opened = false
+	} else if Str2Float64(lastKline.Close) <= bRes.DN+0.5 { // 触碰下线
+		s.pubLower()
+		s.opened = false
+	}
+
+	return nil
 }
 
 func Test() {

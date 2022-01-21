@@ -241,3 +241,8 @@ func QueryAllOrders(symbol string) ([]*futures.Order, error) {
 func CancelOrder(orderID int64) (*futures.CancelOrderResponse, error) {
 	return NewClient().NewCancelOrderService().OrderID(orderID).Do(context.Background())
 }
+
+// 查询历史盈亏
+func QueryHistoryProfit(symbol string) (float64, error) {
+	return 0, nil
+}
