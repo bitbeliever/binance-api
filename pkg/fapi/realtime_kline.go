@@ -102,10 +102,9 @@ func RealTimeKline(symbol, interval string) {
 	log.Println("from history:", toJson(bRes))
 
 	ch := KlineStream(symbol, interval)
-	var s doubleOpenStrategy
+	var s = newDoubleOpenStrategy()
 	// 设置止盈 call only once
 	go s.monitorOrderTP(s.subscribeUpper(), s.subscribeLower())
-	//var pinfo positionInfo
 
 	for {
 		select {

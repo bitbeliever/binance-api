@@ -16,7 +16,7 @@ func main() {
 	//closeOp()
 	//fapi.CloseAllPositions()
 	helper.JsonLog(fapi.QueryAccountPositions())
-	//helper.JsonLog(fapi.QueryBalance())
+	helper.JsonLog(fapi.QueryBalance())
 
 	//fapi.ComparePNLTest()
 }
