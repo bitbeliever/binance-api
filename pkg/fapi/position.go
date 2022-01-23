@@ -84,7 +84,6 @@ func positionRisk(symbol string) ([]*futures.PositionRisk, error) {
 	return NewClient().NewGetPositionRiskService().Symbol(symbol).Do(context.Background())
 }
 
-// todo test again
 func CloseAllPositions() {
 	pos, err := QueryAccountPositions()
 	if err != nil {

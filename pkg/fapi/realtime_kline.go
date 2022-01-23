@@ -34,7 +34,7 @@ func (tb *totalBalance) stopPNL() float64 {
 	tb.mu.RLock()
 	defer tb.mu.RUnlock()
 
-	return 0.01
+	//return 0.01
 	return tb.balance * tb.stopRate
 }
 
