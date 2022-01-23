@@ -1,14 +1,19 @@
-package fapi
+package strategy
 
 import (
-	"fmt"
 	"github.com/adshao/go-binance/v2/futures"
+	"github.com/bitbeliever/binance-api/pkg/fapi/internal/indicator"
+	"github.com/bitbeliever/binance-api/pkg/fapi/internal/principal"
+	"github.com/bitbeliever/binance-api/pkg/fapi/order"
+	"github.com/bitbeliever/binance-api/pkg/fapi/position"
+	"github.com/bitbeliever/binance-api/pkg/fapi/trade"
+	"github.com/bitbeliever/binance-api/pkg/helper"
 	"log"
 	"math"
 )
 
 type strategy interface {
-	Do(symbol string, bRes bollResult, lastKline *futures.Kline) error
+	Do(symbol string, boll indicator.Boll) error
 	StopLoss() error
 	TakeProfit() error
 }
@@ -25,18 +30,16 @@ type doubleOpenStrategy struct {
 	shortOrderStopCh chan struct{}
 }
 
-func newDoubleOpenStrategy() *doubleOpenStrategy {
-	return &doubleOpenStrategy{
+func NewDoubleOpenStrategy() *doubleOpenStrategy {
+	s := &doubleOpenStrategy{
 		longOrderStopCh:  make(chan struct{}, 256),
 		shortOrderStopCh: make(chan struct{}, 256),
 	}
-}
 
-func calcQty(spend float64, closeStr string) string {
-	price := Str2Float64(closeStr)
-	return fmt.Sprintf("%.2f", spend/price)
-	//spend / price
-	//return strconv.FormatFloat(math.Round(spend/price*100)/100, 'f', 10, 64)
+	// 设置止盈 call only once
+	go s.monitorOrderTP(s.subscribeUpper(), s.subscribeLower())
+
+	return s
 }
 
 func (s *doubleOpenStrategy) subscribeUpper() chan struct{} {
@@ -74,47 +77,46 @@ func (s *doubleOpenStrategy) pubStop() {
 	}
 }
 
-// by signal
-func (s *doubleOpenStrategy) mbDoubleOpenPositionByChannel(symbol string, bRes bollResult, lastKline *futures.Kline) error {
-	if !bollCross(bRes, lastKline) {
+func (s *doubleOpenStrategy) DoubleOpenPositionByChannel(symbol string, boll indicator.Boll) error {
+	if boll.Cross() {
 		return nil
 	}
 
-	if bollCrossMB(bRes, lastKline) {
-
+	if boll.CrossMB() {
 		// buy long
 		if s.longOrder == nil {
 
-			longOrder, err := CreateOrderDual(symbol, futures.SideTypeBuy, futures.PositionSideTypeLong, calcQty(principal.singleBetBalance(), lastKline.Close))
+			longOrder, err := order.CreateOrderDual(symbol, futures.SideTypeBuy, futures.PositionSideTypeLong, calcQty(principal.SingleBetBalance(), boll.LastKline().Close))
 			if err != nil {
 				log.Println(err)
 				return err
 			}
 			s.longOrder = longOrder
-			log.Println("达到中线=== open long order", toJson(bRes), lastKline.Close, toJson(longOrder))
+			log.Println("达到中线=== open long order", helper.ToJson(boll.Result()), boll.LastKline().Close, helper.ToJson(longOrder))
 
 			go s.monitorOrderSL(longOrder, s.longOrderStopCh)
 		}
 		if s.shortOrder == nil {
 			// short sell
-			shortOrder, err := CreateOrderDual(symbol, futures.SideTypeSell, futures.PositionSideTypeShort, calcQty(principal.singleBetBalance(), lastKline.Close))
+			shortOrder, err := order.CreateOrderDual(symbol, futures.SideTypeSell, futures.PositionSideTypeShort, calcQty(principal.SingleBetBalance(), boll.LastKline().Close))
 			if err != nil { // todo close
 				log.Println(err)
 				return err
 			}
 			s.shortOrder = shortOrder
-			log.Println("达到中线=== open short order", toJson(bRes), lastKline.Close, toJson(shortOrder))
+			log.Println("达到中线=== open short order", helper.ToJson(boll.Result()), boll.LastKline().Close, helper.ToJson(shortOrder))
 
 			go s.monitorOrderSL(shortOrder, s.shortOrderStopCh)
 		}
 
-	} else if Str2Float64(lastKline.Close) >= bRes.UP-0.5 { // 触碰上线 平多单 止盈
+	} else if boll.CrossUP() { // 触碰上线 平多单 止盈
 		s.pubUpper()
-	} else if Str2Float64(lastKline.Close) <= bRes.DN+0.5 { // 触碰下线
+	} else if boll.CrossDN() { // 触碰下线
 		s.pubLower()
 	}
 
 	return nil
+
 }
 
 func Test() {
@@ -128,7 +130,7 @@ func (s *doubleOpenStrategy) monitorOrderTP(chUpper, chLower chan struct{}) {
 		case <-chUpper:
 			if s.longOrder != nil {
 				log.Println("触发多单止盈")
-				if err := closePositionByOrderResp(s.longOrder); err != nil {
+				if err := position.ClosePositionByOrderResp(s.longOrder); err != nil {
 					log.Println(err)
 					return
 				}
@@ -140,7 +142,7 @@ func (s *doubleOpenStrategy) monitorOrderTP(chUpper, chLower chan struct{}) {
 		case <-chLower:
 			if s.shortOrder != nil {
 				log.Println("触发空单止盈")
-				if err := closePositionByOrderResp(s.shortOrder); err != nil {
+				if err := position.ClosePositionByOrderResp(s.shortOrder); err != nil {
 					log.Println(err)
 					return
 				}
@@ -154,7 +156,7 @@ func (s *doubleOpenStrategy) monitorOrderTP(chUpper, chLower chan struct{}) {
 }
 
 func (s *doubleOpenStrategy) monitorOrderSL(p *futures.CreateOrderResponse, stop chan struct{}) {
-	ch, err := AggTradePrice(p.Symbol)
+	ch, err := trade.AggTradePrice(p.Symbol)
 	if err != nil {
 		log.Println(err)
 		return
@@ -163,12 +165,12 @@ func (s *doubleOpenStrategy) monitorOrderSL(p *futures.CreateOrderResponse, stop
 	for {
 		select {
 		case curPriceStr := <-ch:
-			pnl := calcPNL(Str2Float64(p.OrigQuantity), p.PositionSide, Str2Float64(p.AvgPrice), Str2Float64(curPriceStr))
+			pnl := calcPNL(helper.Str2Float64(p.OrigQuantity), p.PositionSide, helper.Str2Float64(p.AvgPrice), helper.Str2Float64(curPriceStr))
 			//log.Println("current pnl", pnl)
 			// 触发止损
-			if pnl < 0 && math.Abs(pnl) > principal.stopPNL() {
-				log.Printf("触发止损 pnl: %v stopPNL: %v, pSide %v \n", pnl, principal.stopPNL(), p.PositionSide)
-				if err := closePositionByOrderResp(p); err != nil {
+			if pnl < 0 && math.Abs(pnl) > principal.StopPNL() {
+				log.Printf("触发止损 pnl: %v stopPNL: %v, pSide %v \n", pnl, principal.StopPNL(), p.PositionSide)
+				if err := position.ClosePositionByOrderResp(p); err != nil {
 					log.Println(err)
 					return
 				}

@@ -4,6 +4,8 @@ package helper
 import (
 	"encoding/json"
 	"log"
+	"math"
+	"strconv"
 )
 
 func ToJson(v interface{}) string {
@@ -35,4 +37,30 @@ func JsonLog(data interface{}, err error) {
 	}
 
 	log.Println(string(b))
+}
+
+func Str2Float64(s string) float64 {
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		// todo
+		panic(err)
+	}
+	// todo using math round
+	//return math.Round(f*100) / 100
+	return f
+}
+
+func Must(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+func Round(num float64) int {
+	return int(num + math.Copysign(0.5, num))
+}
+
+func ToFixed(num float64, precision int) float64 {
+	output := math.Pow(10, float64(precision))
+	return math.Floor(num*output) / output
 }

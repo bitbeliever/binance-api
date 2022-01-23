@@ -2,13 +2,14 @@ package fapi
 
 import (
 	"github.com/adshao/go-binance/v2/futures"
+	"github.com/bitbeliever/binance-api/pkg/helper"
 	"log"
 )
 
 func WSTicker() {
 	go func() {
 		_, _, err := futures.WsMiniMarketTickerServe(LTC, func(event *futures.WsMiniMarketTickerEvent) {
-			log.Println(toJson(event))
+			log.Println(helper.ToJson(event))
 		}, func(err error) {
 			if err != nil {
 				log.Println(err)
@@ -22,7 +23,7 @@ func WSTicker() {
 
 	go func() {
 		_, _, err := futures.WsBookTickerServe(LTC, func(event *futures.WsBookTickerEvent) {
-			log.Println(toJson(event))
+			log.Println(helper.ToJson(event))
 
 		}, func(err error) {
 			if err != nil {

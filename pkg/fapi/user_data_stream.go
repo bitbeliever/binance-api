@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/adshao/go-binance/v2/futures"
 	"github.com/bitbeliever/binance-api/configs"
+	"github.com/bitbeliever/binance-api/pkg/fapi/internal/principal"
+	"github.com/bitbeliever/binance-api/pkg/helper"
 	"log"
 	"time"
 )
@@ -158,7 +160,7 @@ func formatPrintEvent(event *futures.WsUserDataEvent) {
 		// todo 更新余额
 		for _, balance := range event.AccountUpdate.Balances {
 			if balance.Asset == "USDT" {
-				principal.updateBalance(Str2Float64(balance.Balance))
+				principal.UpdateBalance(helper.Str2Float64(balance.Balance))
 			}
 		}
 		log.Println("================================================================================")
@@ -174,7 +176,7 @@ func formatPrintEvent(event *futures.WsUserDataEvent) {
 		log.Println("================================================================================")
 	} else if event.Event == futures.UserDataEventTypeMarginCall {
 		// 追加保证金事件
-		log.Println("other event occurs", toJson(event))
+		log.Println("other event occurs", helper.ToJson(event))
 	} else if event.Event == futures.UserDataEventTypeAccountConfigUpdate {
 		// 杠杆倍数等账户配置 更新推送
 		log.Printf("事件 %v, 时间 %v \n", event.Event, time.UnixMilli(event.Time).Format(layout))
@@ -186,6 +188,6 @@ func formatPrintEvent(event *futures.WsUserDataEvent) {
 		log.Println("key expired at", time.UnixMilli(event.Time).Format(layout))
 
 	} else {
-		log.Println("ERR unknown event", toJson(event))
+		log.Println("ERR unknown event", helper.ToJson(event))
 	}
 }

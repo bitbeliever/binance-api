@@ -1,8 +1,10 @@
-package fapi
+package order
 
 import (
 	"context"
 	"github.com/adshao/go-binance/v2/futures"
+	"github.com/bitbeliever/binance-api/pkg/fapi/client"
+	"github.com/bitbeliever/binance-api/pkg/helper"
 	"log"
 	"time"
 )
@@ -125,7 +127,7 @@ positionSide 持仓方向: 单向持仓模式下非必填，默认且仅可填BO
 //	return order, nil
 //}
 func CreateOrder(symbol string, side futures.SideType, qty string) (*futures.CreateOrderResponse, error) {
-	order, err := NewClient().NewCreateOrderService().
+	order, err := client.NewClient().NewCreateOrderService().
 		Symbol(symbol).
 		Side(side).
 		Type(futures.OrderTypeMarket).
@@ -145,7 +147,7 @@ func CreateOrderDual(symbol string, side futures.SideType, positionSide futures.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 	defer cancel()
 
-	order, err := NewClient().NewCreateOrderService().
+	order, err := client.NewClient().NewCreateOrderService().
 		Symbol(symbol).
 		Side(side).
 		Type(futures.OrderTypeMarket).
@@ -194,17 +196,17 @@ func CreateOrderDual(symbol string, side futures.SideType, positionSide futures.
   }
 */
 func QueryOpenOrders(symbol string) {
-	orders, err := NewClient().NewListOpenOrdersService().Symbol(symbol).Do(context.Background())
+	orders, err := client.NewClient().NewListOpenOrdersService().Symbol(symbol).Do(context.Background())
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	log.Println("open orders", toJsonIndent(orders))
+	log.Println("open orders", helper.ToJsonIndent(orders))
 }
 
-func QueryAllOpenOrders() ([]*futures.Order, error) {
-	return NewClient().NewListOpenOrdersService().Symbol(ETH).Do(context.Background())
+func QueryAllOpenOrders(symbol string) ([]*futures.Order, error) {
+	return client.NewClient().NewListOpenOrdersService().Symbol(symbol).Do(context.Background())
 
 	//orders, err :=
 	//if err != nil {
@@ -215,18 +217,18 @@ func QueryAllOpenOrders() ([]*futures.Order, error) {
 
 // QueryOrder 查询订单 /fapi/v1/order
 func QueryOrder(symbol string, orderID int64) {
-	order, err := NewClient().NewGetOrderService().Symbol(symbol).OrderID(orderID).Do(context.Background())
+	order, err := client.NewClient().NewGetOrderService().Symbol(symbol).OrderID(orderID).Do(context.Background())
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	log.Println(toJson(order))
+	log.Println(helper.ToJson(order))
 }
 
 // QueryAllOrders  查询所有订单(包括历史订单)  /fapi/v1/allOrders
 func QueryAllOrders(symbol string) ([]*futures.Order, error) {
-	orders, err := NewClient().NewListOrdersService().
+	orders, err := client.NewClient().NewListOrdersService().
 		Limit(10).
 		Symbol(symbol).
 		Do(context.Background())
@@ -236,12 +238,12 @@ func QueryAllOrders(symbol string) ([]*futures.Order, error) {
 	}
 
 	//log.Println(toJson(orders))
-	log.Println("last order", toJson(orders[len(orders)-1]), len(orders), time.UnixMilli(orders[0].UpdateTime), time.UnixMilli(orders[len(orders)-1].UpdateTime).Format("15:04:05"))
+	log.Println("last order", helper.ToJson(orders[len(orders)-1]), len(orders), time.UnixMilli(orders[0].UpdateTime), time.UnixMilli(orders[len(orders)-1].UpdateTime).Format("15:04:05"))
 	return orders, err
 }
 
 func CancelOrder(orderID int64) (*futures.CancelOrderResponse, error) {
-	return NewClient().NewCancelOrderService().OrderID(orderID).Do(context.Background())
+	return client.NewClient().NewCancelOrderService().OrderID(orderID).Do(context.Background())
 }
 
 // 查询历史盈亏

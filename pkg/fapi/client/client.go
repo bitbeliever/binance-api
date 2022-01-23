@@ -1,4 +1,4 @@
-package fapi
+package client
 
 import (
 	"github.com/adshao/go-binance/v2/futures"

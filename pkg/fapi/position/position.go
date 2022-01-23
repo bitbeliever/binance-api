@@ -1,14 +1,17 @@
-package fapi
+package position
 
 import (
-	"context"
 	"github.com/adshao/go-binance/v2/futures"
+	"github.com/bitbeliever/binance-api/pkg/account"
+	"github.com/bitbeliever/binance-api/pkg/fapi/internal/principal"
+	"github.com/bitbeliever/binance-api/pkg/fapi/order"
+	"github.com/bitbeliever/binance-api/pkg/helper"
 	"log"
 	"math"
 	"time"
 )
 
-// 平仓
+// ClosePositionByOrderResp 平仓
 /*
 Open position:
 	Long : positionSide=LONG, side=BUY
@@ -18,26 +21,17 @@ Close position:
 	Close long position: positionSide=LONG, side=SELL
 	Close short position: positionSide=SHORT, side=BUY
 */
-func closePositionByOrderResp(order *futures.CreateOrderResponse) error {
-	//closeOrder, err := CreateOrderDual(order.Symbol, futures.SideTypeSell, reversePositionSide(order.PositionSide), order.OrigQuantity)
-	//closeOrder, err := CreateOrderDual(order.Symbol, futures.SideTypeSell, order.PositionSide, order.OrigQuantity)
-	closeOrder, err := CreateOrderDual(order.Symbol, reverseSideType(order.Side), order.PositionSide, order.OrigQuantity)
+func ClosePositionByOrderResp(o *futures.CreateOrderResponse) error {
+	closeOrder, err := order.CreateOrderDual(o.Symbol, reverseSideType(o.Side), o.PositionSide, o.OrigQuantity)
 	if err != nil {
 		return err
 	}
-	//if positionSide == futures.PositionSideTypeLong {
-	//	//principal.closeLongOrder = closeOrder
-	//} else if positionSide == futures.PositionSideTypeShort {
-	//	//principal.closeShortOrder = closeOrder
-	//} else {
-	//	return fmt.Errorf("wrong side %s", positionSide)
-	//}
 
-	log.Println("to close positions", toJson(closeOrder))
+	log.Println("to close positions", helper.ToJson(closeOrder))
 	return nil
 }
 
-func closePosition(position *futures.AccountPosition) error {
+func ClosePosition(position *futures.AccountPosition) error {
 	var side futures.SideType
 	var amt string
 	if position.PositionAmt[0] == '-' {
@@ -47,7 +41,7 @@ func closePosition(position *futures.AccountPosition) error {
 		side = futures.SideTypeSell
 		amt = position.PositionAmt
 	}
-	_, err := CreateOrderDual(position.Symbol, side, position.PositionSide, amt)
+	_, err := order.CreateOrderDual(position.Symbol, side, position.PositionSide, amt)
 	if err != nil {
 		return err
 	}
@@ -79,19 +73,14 @@ func reverseSideType(sideType futures.SideType) futures.SideType {
 	}
 }
 
-// 用户持仓风险V2 /fapi/v2/positionRisk
-func positionRisk(symbol string) ([]*futures.PositionRisk, error) {
-	return NewClient().NewGetPositionRiskService().Symbol(symbol).Do(context.Background())
-}
-
 func CloseAllPositions() {
-	pos, err := QueryAccountPositions()
+	pos, err := account.QueryAccountPositions()
 	if err != nil {
 		panic(err)
 	}
 
 	for _, position := range pos {
-		if err := closePosition(position); err != nil {
+		if err := ClosePosition(position); err != nil {
 			log.Println(err)
 		}
 	}
@@ -103,16 +92,16 @@ func positionMonitor() {
 	for {
 		select {
 		case <-ticker.C:
-			pos, err := QueryAccountPositions()
+			pos, err := account.QueryAccountPositions()
 			if err != nil {
 				log.Println(err)
 				continue
 			}
 			for _, p := range pos {
-				pnl := Str2Float64(p.UnrealizedProfit)
-				if pnl < 0 && math.Abs(pnl) > principal.stopPNL() {
+				pnl := helper.Str2Float64(p.UnrealizedProfit)
+				if pnl < 0 && math.Abs(pnl) > principal.StopPNL() {
 					log.Println("stop loss reach")
-					if err := closePosition(p); err != nil {
+					if err := ClosePosition(p); err != nil {
 						log.Println(err)
 						return
 					}

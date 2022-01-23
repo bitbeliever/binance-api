@@ -1,7 +1,12 @@
-package fapi
+package strategy
 
 import (
 	"github.com/adshao/go-binance/v2/futures"
+	"github.com/bitbeliever/binance-api/pkg/account"
+	"github.com/bitbeliever/binance-api/pkg/fapi/internal/principal"
+	"github.com/bitbeliever/binance-api/pkg/fapi/position"
+	"github.com/bitbeliever/binance-api/pkg/fapi/trade"
+	"github.com/bitbeliever/binance-api/pkg/helper"
 	"log"
 	"math"
 )
@@ -44,7 +49,7 @@ func calcPNL(positionSize float64, sideType futures.PositionSideType, entry floa
 // 单个仓位, 监控, 止损pnl
 // todo 通过 ORDER_TRADE_UPDATE 进行监控
 func watchPNLStopLimit(order *futures.AccountPosition, stop chan struct{}) {
-	ch, err := AggTradePrice(order.Symbol)
+	ch, err := trade.AggTradePrice(order.Symbol)
 	if err != nil {
 		log.Println(err)
 		return
@@ -53,12 +58,12 @@ func watchPNLStopLimit(order *futures.AccountPosition, stop chan struct{}) {
 	for {
 		select {
 		case curPriceStr := <-ch:
-			pnl := calcPNL(Str2Float64(order.PositionAmt), order.PositionSide, Str2Float64(order.EntryPrice), Str2Float64(curPriceStr))
+			pnl := calcPNL(helper.Str2Float64(order.PositionAmt), order.PositionSide, helper.Str2Float64(order.EntryPrice), helper.Str2Float64(curPriceStr))
 			//log.Println("current pnl", pnl)
 			// 触发止损
-			if pnl < 0 && math.Abs(pnl) > principal.stopPNL() {
-				log.Printf("触发止损 pnl: %v \t stopPNL %v \n", pnl, principal.stopPNL())
-				if err := closePosition(order); err != nil {
+			if pnl < 0 && math.Abs(pnl) > principal.StopPNL() {
+				log.Printf("触发止损 pnl: %v \t stopPNL %v \n", pnl, principal.StopPNL())
+				if err := position.ClosePosition(order); err != nil {
 					log.Println(err)
 				}
 				return
@@ -71,7 +76,7 @@ func watchPNLStopLimit(order *futures.AccountPosition, stop chan struct{}) {
 
 // pnl 对比测试
 func ComparePNLTest() {
-	pos, err := QueryAccountPositions()
+	pos, err := account.QueryAccountPositions()
 	if err != nil {
 		log.Println(err)
 		return
@@ -79,5 +84,5 @@ func ComparePNLTest() {
 
 	p := pos[1]
 	log.Println("position un_profit", p.UnrealizedProfit)
-	//calcPNL(Str2Float64(p.PositionAmt), p.PositionSide, Str2Float64(p.EntryPrice), ch)
+	//calcPNL(helper.Str2Float64(p.PositionAmt), p.PositionSide, helper.Str2Float64(p.EntryPrice), ch)
 }

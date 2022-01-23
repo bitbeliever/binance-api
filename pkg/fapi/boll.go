@@ -2,6 +2,7 @@ package fapi
 
 import (
 	"github.com/adshao/go-binance/v2/futures"
+	"github.com/bitbeliever/binance-api/pkg/helper"
 	"math"
 )
 
@@ -30,13 +31,13 @@ func calculateBoll(lines []futures.WsKline) bollResult {
 
 	var closeSum float64
 	for _, line := range lines {
-		closeSum += Str2Float64(line.Close)
+		closeSum += helper.Str2Float64(line.Close)
 	}
 	MA := closeSum / float64(N)
 
 	closeSum = 0
 	for _, line := range lines {
-		closeSum += math.Pow(Str2Float64(line.Close)-MA, 2)
+		closeSum += math.Pow(helper.Str2Float64(line.Close)-MA, 2)
 	}
 	// 标准差
 	MD := math.Sqrt(closeSum / float64(N-1))
@@ -48,40 +49,14 @@ func calculateBoll(lines []futures.WsKline) bollResult {
 	}
 }
 
-func CalculateBollByFapiKline(lines []*futures.Kline) bollResult {
-	// N 时间
-	N := len(lines)
-
-	var closeSum float64
-	for _, line := range lines {
-		closeSum += Str2Float64(line.Close)
-	}
-	MA := closeSum / float64(N)
-
-	closeSum = 0
-	for _, line := range lines {
-		closeSum += math.Pow(Str2Float64(line.Close)-MA, 2)
-	}
-	// 标准差
-	//MD := math.Sqrt(closeSum / float64(N-1))
-	MD := math.Sqrt(closeSum / float64(N)) // todo: 标准差: 除以N || N-1(币安公式)
-
-	return bollResult{
-		MB: MA,
-		UP: MA + MD*2,
-		DN: MA - MD*2,
-		//Time: time.UnixMilli(lines[N-1].StartTime),
-	}
-}
-
 func isCrossingLine(bRes bollResult, line *futures.Kline) bool {
 	MB := bRes.MB
 	_ = MB
 	UP := bRes.UP
 	DN := bRes.DN
 
-	open := Str2Float64(line.Open)
-	close := Str2Float64(line.Close)
+	open := helper.Str2Float64(line.Open)
+	close := helper.Str2Float64(line.Close)
 
 	// 穿过布林带上线
 	if (open < UP && close > UP) ||
@@ -102,8 +77,8 @@ func calCrossType(bRes bollResult, line *futures.Kline) crossType {
 	UP := bRes.UP
 	DN := bRes.DN
 
-	open := Str2Float64(line.Open)
-	close := Str2Float64(line.Close)
+	open := helper.Str2Float64(line.Open)
+	close := helper.Str2Float64(line.Close)
 
 	// 上升 穿过布林带上线
 	if open < UP && close > UP {
@@ -119,26 +94,4 @@ func calCrossType(bRes bollResult, line *futures.Kline) crossType {
 	}
 
 	return noCross
-}
-
-// 穿过boll带中线
-// !!todo +-1 for testing
-func bollCrossMB(bRes bollResult, line *futures.Kline) bool {
-	open := Str2Float64(line.Open)
-	close := Str2Float64(line.Close)
-	return (open < bRes.MB && close >= bRes.MB) ||
-		(open > bRes.MB && close <= bRes.MB)
-	//return (open < bRes.MB && (close+1) >= bRes.MB) ||
-	//	(open > bRes.MB && (close-1) <= bRes.MB)
-}
-
-func bollCross(bRes bollResult, line *futures.Kline) bool {
-	price := Str2Float64(line.Close)
-
-	//return (price >= bRes.UP-0.5) ||
-	//	(price <= bRes.DN+0.5) ||
-
-	return (price >= bRes.UP) ||
-		(price <= bRes.DN) ||
-		bollCrossMB(bRes, line)
 }

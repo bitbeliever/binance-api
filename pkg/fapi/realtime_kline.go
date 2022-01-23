@@ -3,108 +3,29 @@ package fapi
 import (
 	"encoding/json"
 	"github.com/adshao/go-binance/v2/futures"
+	"github.com/bitbeliever/binance-api/pkg/fapi/internal/indicator"
+	"github.com/bitbeliever/binance-api/pkg/fapi/strategy"
+	"github.com/bitbeliever/binance-api/pkg/helper"
 	"log"
 	"os"
-	"sync"
 	"time"
 )
-
-var (
-	principal *totalBalance
-)
-
-type totalBalance struct {
-	mu sync.RWMutex
-	// usdt
-	balance          float64
-	openPositionRate float64 // 单次下单率 0.1
-
-	// 双开
-	orderLong, orderShort,
-	closeLongOrder, closeShortOrder *futures.CreateOrderResponse
-
-	stopRate   float64 // 止损 0.1 for now
-	takeProfit float64 // 止盈率
-
-	stopLossFn func()
-}
-
-// 止损的pnl
-func (tb *totalBalance) stopPNL() float64 {
-	tb.mu.RLock()
-	defer tb.mu.RUnlock()
-
-	//return 0.01
-	return tb.balance * tb.stopRate
-}
-
-func (tb *totalBalance) getBalance() float64 {
-	tb.mu.RLock()
-	defer tb.mu.RUnlock()
-	return tb.balance
-}
-
-func (tb *totalBalance) singleBetBalance() float64 {
-	tb.mu.RLock()
-	tb.mu.RUnlock()
-
-	return tb.balance * tb.openPositionRate
-}
-
-func (tb *totalBalance) updateBalance(balance float64) {
-	tb.mu.Lock()
-	defer tb.mu.Unlock()
-
-	tb.balance = balance
-}
-
-func init() {
-	if err := os.Remove("line.txt"); err != nil {
-		log.Println(err)
-	}
-
-	balances, err := QueryBalance()
-	must(err)
-	principal = &totalBalance{}
-
-	if len(balances) != 0 {
-		// todo
-		for _, balance := range balances {
-			if balance.Asset == "USDT" {
-				principal.balance = Str2Float64(balance.CrossWalletBalance)
-			}
-		}
-	}
-
-	// todo
-	principal.stopRate = 0.1
-	principal.openPositionRate = 0.1
-	log.Println("初始本金:", principal.balance)
-	log.Println("stopPNL:", principal.stopPNL())
-	log.Println("principal", principal)
-}
 
 // RealTimeKline 实时获取最新k线数据和实时计算boll
 func RealTimeKline(symbol, interval string) {
 	log.Printf("实时数据 symbol: %v, interval %v \n: ", symbol, interval)
-	lines, err := KlineHistory(symbol, interval, 21, 0)
+	lines, err := KlineHistory(symbol, interval, 21)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	//for _, line := range lines {
-	//	log.Println(time.UnixMilli(line.OpenTime).Format("15:04:05"), time.UnixMilli(line.CloseTime).Format("15:04:05"), line.Open, line.High, line.Low, line.Close)
-	//}
-
-	bRes := CalculateBollByFapiKline(lines)
+	bRes := indicator.NewBoll(lines).Result()
 	writeToLineTestFile(lines)
-	log.Println("from history:", toJson(bRes))
+	log.Println("from history:", helper.ToJson(bRes))
 
 	ch := KlineStream(symbol, interval)
-	var s = newDoubleOpenStrategy()
-	// 设置止盈 call only once
-	go s.monitorOrderTP(s.subscribeUpper(), s.subscribeLower())
+	var s = strategy.NewDoubleOpenStrategy()
 
 	for {
 		select {
@@ -134,12 +55,10 @@ func RealTimeKline(symbol, interval string) {
 				writeToLineTestFile(lines)
 			}
 
-			bRes = CalculateBollByFapiKline(lines)
+			//bRes := indicator.NewBollResult(lines)
 			//log.Println(toJson(bRes), lastKline.Close)
 
-			// v3 double open position
-			//if err := s.mbDoubleOpenPosition(symbol, bRes, lastKline); err != nil {
-			if err := s.mbDoubleOpenPositionByChannel(symbol, bRes, lastKline); err != nil {
+			if err := s.DoubleOpenPositionByChannel(symbol, indicator.NewBoll(lines)); err != nil {
 				log.Println(err)
 				return
 			}
@@ -180,7 +99,7 @@ func writeToLineTestFile(lines []*futures.Kline) {
 
 // HistoryBoll 测试历史boll指标数据
 func HistoryBoll(symbol string) {
-	lines, err := KlineHistory(symbol, "15m", 22, 0)
+	lines, err := KlineHistory(symbol, "15m", 22)
 	if err != nil {
 		log.Println(err)
 		return
@@ -189,5 +108,5 @@ func HistoryBoll(symbol string) {
 	log.Println(time.UnixMilli(lines[len(lines)-1].OpenTime).Format("15:04:05"))
 	log.Println(len(lines))
 
-	log.Println(toJson(CalculateBollByFapiKline(lines)))
+	log.Println(helper.ToJson(indicator.NewBollResult(lines)))
 }

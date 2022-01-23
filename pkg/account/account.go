@@ -1,8 +1,10 @@
-package fapi
+package account
 
 import (
 	"context"
 	"github.com/adshao/go-binance/v2/futures"
+	"github.com/bitbeliever/binance-api/pkg/fapi/client"
+	"github.com/bitbeliever/binance-api/pkg/helper"
 	"time"
 )
 
@@ -66,7 +68,7 @@ import (
 }
 */
 func QueryAccount() (*futures.Account, error) {
-	c := NewClient()
+	c := client.NewClient()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
@@ -104,14 +106,14 @@ QueryBalance /fapi/v2/balance 账户余额
         "updateTime": 1617939110373
 */
 func QueryBalance() ([]*futures.Balance, error) {
-	balances, err := NewClient().NewGetBalanceService().Do(context.Background())
+	balances, err := client.NewClient().NewGetBalanceService().Do(context.Background())
 	if err != nil {
 		return nil, err
 	}
 
 	var ret []*futures.Balance
 	for _, balance := range balances {
-		if Str2Float64(balance.Balance) != 0 {
+		if helper.Str2Float64(balance.Balance) != 0 {
 			ret = append(ret, balance)
 		}
 	}
@@ -146,7 +148,7 @@ func QueryAccountPositions() ([]*futures.AccountPosition, error) {
 
 	var positions []*futures.AccountPosition
 	for _, p := range account.Positions {
-		if Str2Float64(p.PositionAmt) != 0 {
+		if helper.Str2Float64(p.PositionAmt) != 0 {
 			positions = append(positions, p)
 		}
 	}
@@ -180,9 +182,14 @@ func QueryAccountAssets() ([]*futures.AccountAsset, error) {
 
 	var assets []*futures.AccountAsset
 	for _, a := range account.Assets {
-		if Str2Float64(a.WalletBalance) != 0 {
+		if helper.Str2Float64(a.WalletBalance) != 0 {
 			assets = append(assets, a)
 		}
 	}
 	return assets, nil
+}
+
+// 用户持仓风险V2 /fapi/v2/positionRisk
+func positionRisk(symbol string) ([]*futures.PositionRisk, error) {
+	return client.NewClient().NewGetPositionRiskService().Symbol(symbol).Do(context.Background())
 }
