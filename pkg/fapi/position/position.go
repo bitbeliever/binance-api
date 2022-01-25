@@ -86,6 +86,21 @@ func CloseAllPositions() {
 	}
 }
 
+func CloseAllPositionsBySymbol(symbol string) (err error) {
+	pos, err := account.QueryAccountPositionsBySymbol(symbol)
+	if err != nil {
+		return err
+	}
+
+	for _, position := range pos {
+		if err = ClosePosition(position); err != nil {
+			log.Println(err)
+		}
+	}
+
+	return err
+}
+
 // 仓位监控
 func positionMonitor() {
 	ticker := time.NewTicker(time.Second)

@@ -28,12 +28,14 @@ type doubleOpenStrategy struct {
 	longOrderStopCh  chan struct{}
 	shortOrder       *futures.CreateOrderResponse
 	shortOrderStopCh chan struct{}
+	leverage         *futures.SymbolLeverage
 }
 
-func NewDoubleOpenStrategy() *doubleOpenStrategy {
+func NewDoubleOpenStrategy(lev *futures.SymbolLeverage) *doubleOpenStrategy {
 	s := &doubleOpenStrategy{
 		longOrderStopCh:  make(chan struct{}, 256),
 		shortOrderStopCh: make(chan struct{}, 256),
+		leverage:         lev,
 	}
 
 	// 设置止盈 call only once
@@ -86,7 +88,7 @@ func (s *doubleOpenStrategy) DoubleOpenPositionByChannel(symbol string, boll ind
 		// buy long
 		if s.longOrder == nil {
 
-			longOrder, err := order.CreateOrderDual(symbol, futures.SideTypeBuy, futures.PositionSideTypeLong, calcQty(principal.SingleBetBalance(), boll.LastKline().Close))
+			longOrder, err := order.CreateOrderDual(symbol, futures.SideTypeBuy, futures.PositionSideTypeLong, calcQty(principal.SingleBetBalance(), boll.LastKline().Close, s.leverage.Leverage))
 			if err != nil {
 				log.Println(err)
 				return err
@@ -98,7 +100,7 @@ func (s *doubleOpenStrategy) DoubleOpenPositionByChannel(symbol string, boll ind
 		}
 		if s.shortOrder == nil {
 			// short sell
-			shortOrder, err := order.CreateOrderDual(symbol, futures.SideTypeSell, futures.PositionSideTypeShort, calcQty(principal.SingleBetBalance(), boll.LastKline().Close))
+			shortOrder, err := order.CreateOrderDual(symbol, futures.SideTypeSell, futures.PositionSideTypeShort, calcQty(principal.SingleBetBalance(), boll.LastKline().Close, s.leverage.Leverage))
 			if err != nil { // todo close
 				log.Println(err)
 				return err
@@ -120,7 +122,7 @@ func (s *doubleOpenStrategy) DoubleOpenPositionByChannel(symbol string, boll ind
 }
 
 func Test() {
-	log.Println(calcQty(10, "3136.32"))
+	//log.Println(calcQty(10, "3136.32"))
 	log.Println(10 / 3136.32)
 }
 

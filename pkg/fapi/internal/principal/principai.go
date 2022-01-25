@@ -59,6 +59,11 @@ func UpdateBalance(balance float64) {
 	tb.balance = balance
 }
 
+// Qty todo
+func Qty() string {
+	return "0.1"
+}
+
 func init() {
 	if err := os.Remove("line.txt"); err != nil {
 		log.Println(err)

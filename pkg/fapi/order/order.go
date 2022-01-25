@@ -142,7 +142,7 @@ func CreateOrder(symbol string, side futures.SideType, qty string) (*futures.Cre
 	return order, nil
 }
 
-// CreateOrderDual 双向持仓
+// CreateOrderDual 双向持仓下的开仓
 func CreateOrderDual(symbol string, side futures.SideType, positionSide futures.PositionSideType, qty string) (*futures.CreateOrderResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 	defer cancel()
@@ -160,6 +160,51 @@ func CreateOrderDual(symbol string, side futures.SideType, positionSide futures.
 		//closePositionByOrderResp(true). //true, false；触发后全部平仓，仅支持STOP_MARKET和TAKE_PROFIT_MARKET；不与quantity合用；自带只平仓效果，不与reduceOnly 合用
 		//PriceProtect() // 条件单触发保护："TRUE","FALSE", 默认"FALSE". 仅 STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET 需要此参数
 		Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return order, nil
+}
+
+// DualBuyLong 加仓 多单
+func DualBuyLong(symbol string, qty string) (*futures.CreateOrderResponse, error) {
+	order, err := client.NewClient().NewCreateOrderService().
+		Symbol(symbol).
+		Side(futures.SideTypeBuy).
+		Type(futures.OrderTypeMarket).
+		Quantity(qty).
+		PositionSide(futures.PositionSideTypeLong).    // 持仓方向 单向必填默认为BOTH
+		WorkingType(futures.WorkingTypeContractPrice). // stopPrice 触发类型: MARK_PRICE(标记价格), CONTRACT_PRICE(合约最新价). 默认 CONTRACT_PRICE
+		NewOrderResponseType(futures.NewOrderRespTypeRESULT).
+		//StopPrice().                                   // 触发价 STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET 需要此参数
+		//Price("0.0030000"). // 委托价格
+		//closePositionByOrderResp(true). //true, false；触发后全部平仓，仅支持STOP_MARKET和TAKE_PROFIT_MARKET；不与quantity合用；自带只平仓效果，不与reduceOnly 合用
+		//PriceProtect() // 条件单触发保护："TRUE","FALSE", 默认"FALSE". 仅 STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET 需要此参数
+		Do(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	return order, nil
+}
+
+// DualSellShort 加仓 空单
+func DualSellShort(symbol string, qty string) (*futures.CreateOrderResponse, error) {
+	order, err := client.NewClient().NewCreateOrderService().
+		Symbol(symbol).
+		Side(futures.SideTypeSell).
+		Type(futures.OrderTypeMarket).
+		Quantity(qty).
+		PositionSide(futures.PositionSideTypeShort).   // 持仓方向 单向必填默认为BOTH
+		WorkingType(futures.WorkingTypeContractPrice). // stopPrice 触发类型: MARK_PRICE(标记价格), CONTRACT_PRICE(合约最新价). 默认 CONTRACT_PRICE
+		NewOrderResponseType(futures.NewOrderRespTypeRESULT).
+		//StopPrice().                                   // 触发价 STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET 需要此参数
+		//Price("0.0030000"). // 委托价格
+		//closePositionByOrderResp(true). //true, false；触发后全部平仓，仅支持STOP_MARKET和TAKE_PROFIT_MARKET；不与quantity合用；自带只平仓效果，不与reduceOnly 合用
+		//PriceProtect() // 条件单触发保护："TRUE","FALSE", 默认"FALSE". 仅 STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET 需要此参数
+		Do(context.Background())
+
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +271,7 @@ func QueryOrder(symbol string, orderID int64) {
 	log.Println(helper.ToJson(order))
 }
 
-// QueryAllOrders  查询所有订单(包括历史订单)  /fapi/v1/allOrders
+// QueryAllOrders 查询所有订单(包括历史订单)  /fapi/v1/allOrders
 func QueryAllOrders(symbol string) ([]*futures.Order, error) {
 	orders, err := client.NewClient().NewListOrdersService().
 		Limit(10).
@@ -246,7 +291,7 @@ func CancelOrder(orderID int64) (*futures.CancelOrderResponse, error) {
 	return client.NewClient().NewCancelOrderService().OrderID(orderID).Do(context.Background())
 }
 
-// 查询历史盈亏
+// QueryHistoryProfit 查询历史盈亏
 func QueryHistoryProfit(symbol string) (float64, error) {
 	return 0, nil
 }

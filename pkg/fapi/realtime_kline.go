@@ -5,6 +5,7 @@ import (
 	"github.com/adshao/go-binance/v2/futures"
 	"github.com/bitbeliever/binance-api/pkg/fapi/internal/indicator"
 	"github.com/bitbeliever/binance-api/pkg/fapi/strategy"
+	"github.com/bitbeliever/binance-api/pkg/fapi/trade"
 	"github.com/bitbeliever/binance-api/pkg/helper"
 	"log"
 	"os"
@@ -20,12 +21,19 @@ func RealTimeKline(symbol, interval string) {
 		return
 	}
 
+	// 杠杆调整
+	lev, err := trade.LeverageSetMax(symbol)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
 	bRes := indicator.NewBoll(lines).Result()
 	writeToLineTestFile(lines)
 	log.Println("from history:", helper.ToJson(bRes))
 
 	ch := KlineStream(symbol, interval)
-	var s = strategy.NewDoubleOpenStrategy()
+	var s = strategy.NewDoubleOpenStrategy(lev)
 
 	for {
 		select {

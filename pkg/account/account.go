@@ -155,6 +155,20 @@ func QueryAccountPositions() ([]*futures.AccountPosition, error) {
 	return positions, nil
 }
 
+func QueryAccountPositionsBySymbol(symbol string) (pos []*futures.AccountPosition, err error) {
+	positions, err := QueryAccountPositions()
+	if err != nil {
+		return
+	}
+
+	for _, p := range positions {
+		if p.Symbol == symbol {
+			pos = append(pos, p)
+		}
+	}
+	return
+}
+
 /*
 QueryAccountAssets
         {

@@ -88,8 +88,28 @@ func (b Boll) LastKline() *futures.Kline {
 	return b.klines[len(b.klines)-1]
 }
 
+func (b Boll) CurrentPrice() string {
+	return b.LastKline().Close
+}
+
+func (b Boll) Klines() []*futures.Kline {
+	return b.klines
+}
+
 func (b Boll) Result() BollResult {
 	return b.res
+}
+
+// IsSecondHalf boll带下半段
+func (b Boll) IsSecondHalf() bool {
+	price := helper.Str2Float64(b.LastKline().Close)
+	return price < b.res.MB && price > b.res.DN
+}
+
+// IsFirstHalf boll带上半段
+func (b Boll) IsFirstHalf() bool {
+	price := helper.Str2Float64(b.LastKline().Close)
+	return price > b.res.MB && price < b.res.UP
 }
 
 func NewBollResult(klines []*futures.Kline) BollResult {

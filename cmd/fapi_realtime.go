@@ -39,11 +39,5 @@ func main() {
 		}
 	}
 
-	// 杠杆调整
-	if err := trade.LeverageSetMax(symbol); err != nil {
-		log.Println(err)
-		return
-	}
-
 	fapi.RealTimeKline(symbol, configs.Cfg.KlineInterval)
 }

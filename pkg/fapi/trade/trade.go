@@ -68,16 +68,16 @@ func LeverageBracket(symbol string) ([]*futures.LeverageBracket, error) {
 }
 
 // LeverageSetMax 设置该交易对最大杠杆 todo 杠杆分层
-func LeverageSetMax(symbol string) error {
+func LeverageSetMax(symbol string) (*futures.SymbolLeverage, error) {
 	brackets, err := LeverageBracket(symbol)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if len(brackets) == 0 {
-		return fmt.Errorf("error brackets data %v", brackets)
+		return nil, fmt.Errorf("error brackets data %v", brackets)
 	}
 	if brackets[0].Symbol != symbol {
-		return fmt.Errorf("symbol incorrespond %v %v", symbol, brackets[0].Symbol)
+		return nil, fmt.Errorf("symbol incorrespond %v %v", symbol, brackets[0].Symbol)
 	}
 
 	leverage, err := client.NewClient().NewChangeLeverageService().Symbol(symbol).Leverage(brackets[0].Brackets[0].InitialLeverage).Do(context.Background())
@@ -86,7 +86,7 @@ func LeverageSetMax(symbol string) error {
 	}
 	log.Println("杠杆设置最大:", helper.ToJson(leverage))
 
-	return nil
+	return leverage, nil
 }
 
 // PositionMode 查询持仓模式 "true": 双向持仓模式；"false": 单向持仓模式
