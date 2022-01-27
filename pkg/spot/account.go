@@ -3,6 +3,7 @@ package spot
 import (
 	"context"
 	"github.com/adshao/go-binance/v2"
+	"github.com/bitbeliever/binance-api/pkg/helper"
 	"log"
 	"time"
 )
@@ -35,7 +36,7 @@ func AccountBalances() ([]binance.Balance, error) {
 
 	var balances []binance.Balance
 	for _, b := range account.Balances {
-		if str2Float64(b.Locked) != 0 || str2Float64(b.Free) != 0 {
+		if helper.Str2Float64(b.Locked) != 0 || helper.Str2Float64(b.Free) != 0 {
 			balances = append(balances, b)
 		}
 	}

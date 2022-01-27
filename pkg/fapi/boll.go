@@ -25,9 +25,6 @@ func subscribeWsKline(ch chan futures.WsKline, out chan bollResult) {
 func calculateBoll(lines []futures.WsKline) bollResult {
 	// N 时间
 	N := len(lines)
-	if N != 20 {
-		// todo
-	}
 
 	var closeSum float64
 	for _, line := range lines {
@@ -72,7 +69,7 @@ func isCrossingLine(bRes bollResult, line *futures.Kline) bool {
 	return false
 }
 
-// 计算穿针类型 todo 中线
+// 计算穿针类型
 func calCrossType(bRes bollResult, line *futures.Kline) crossType {
 	UP := bRes.UP
 	DN := bRes.DN

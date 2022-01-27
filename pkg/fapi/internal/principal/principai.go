@@ -17,15 +17,15 @@ var (
 type totalBalance struct {
 	mu sync.RWMutex
 	// usdt
-	balance          float64
-	openPositionRate float64 // 单次下单率 0.1
+	Balance          float64
+	OpenPositionRate float64 // 单次下单率 0.1
 
 	// 双开
 	orderLong, orderShort,
 	closeLongOrder, closeShortOrder *futures.CreateOrderResponse
 
-	stopRate   float64 // 止损 0.1 for now
-	takeProfit float64 // 止盈率
+	StopRate   float64 // 止损 0.1 for now
+	TakeProfit float64 // 止盈率
 
 	stopLossFn func()
 }
@@ -36,32 +36,32 @@ func StopPNL() float64 {
 	defer tb.mu.RUnlock()
 
 	//return 0.01
-	return tb.balance * tb.stopRate
+	return tb.Balance * tb.StopRate
 }
 
 func GetBalance() float64 {
 	tb.mu.RLock()
 	defer tb.mu.RUnlock()
-	return tb.balance
+	return tb.Balance
 }
 
 func SingleBetBalance() float64 {
 	tb.mu.RLock()
 	tb.mu.RUnlock()
 
-	return tb.balance * tb.openPositionRate
+	return tb.Balance * tb.OpenPositionRate
 }
 
 func UpdateBalance(balance float64) {
 	tb.mu.Lock()
 	defer tb.mu.Unlock()
 
-	tb.balance = balance
+	tb.Balance = balance
 }
 
-// Qty todo
+// Qty !!todo
 func Qty() string {
-	return "0.1"
+	return "0.08"
 }
 
 func init() {
@@ -74,20 +74,21 @@ func init() {
 	tb = &totalBalance{}
 
 	if len(balances) != 0 {
-		// todo
+		// 只计算USDT的余额
 		for _, balance := range balances {
 			if balance.Asset == "USDT" {
-				tb.balance = helper.Str2Float64(balance.CrossWalletBalance)
+				tb.Balance = helper.Str2Float64(balance.CrossWalletBalance)
 			}
 		}
 	}
 
 	// todo
-	tb.stopRate = 0.1
-	tb.openPositionRate = 0.1
-	log.Println("初始本金:", tb.balance)
+	tb.StopRate = 0.1
+	tb.OpenPositionRate = 0.1
+	log.Println("初始本金:", tb.Balance)
 	log.Println("stopPNL:", StopPNL())
 	log.Println("principal", helper.ToJson(tb))
+	log.Println("principal singleBetBalance()", SingleBetBalance())
 }
 
 func must(err error) {

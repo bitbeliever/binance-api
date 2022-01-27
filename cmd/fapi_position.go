@@ -12,7 +12,7 @@ func main() {
 	helper.JsonLog(account.QueryAccountPositions())
 
 	//closeOp()
-	//fapi.CloseAllPositions()
+	//position.CloseAllPositions()
 	helper.JsonLog(account.QueryAccountPositions())
 	helper.JsonLog(account.QueryBalance())
 

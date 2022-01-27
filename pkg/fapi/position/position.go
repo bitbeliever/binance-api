@@ -49,7 +49,6 @@ func ClosePosition(position *futures.AccountPosition) error {
 	return nil
 }
 
-/// todo
 func openPosition() {}
 
 // long/short reverse

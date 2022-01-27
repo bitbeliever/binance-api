@@ -1,4 +1,4 @@
-// Package helper global helper, todo remove
+// Package helper global helper
 package helper
 
 import (
@@ -45,6 +45,7 @@ func Str2Float64(s string) float64 {
 		// todo
 		panic(err)
 	}
+
 	// todo using math round
 	//return math.Round(f*100) / 100
 	return f

@@ -18,12 +18,13 @@ type strategy interface {
 	TakeProfit() error
 }
 
+// todo add lock
 type doubleOpenStrategy struct {
+	symbol     string
 	upperChans []chan struct{}
 	lowerChans []chan struct{}
 	stopChans  []chan struct{}
 
-	// todo add lock
 	longOrder        *futures.CreateOrderResponse
 	longOrderStopCh  chan struct{}
 	shortOrder       *futures.CreateOrderResponse
@@ -31,8 +32,9 @@ type doubleOpenStrategy struct {
 	leverage         *futures.SymbolLeverage
 }
 
-func NewDoubleOpenStrategy(lev *futures.SymbolLeverage) *doubleOpenStrategy {
+func NewDoubleOpenStrategy(symbol string, lev *futures.SymbolLeverage) *doubleOpenStrategy {
 	s := &doubleOpenStrategy{
+		symbol:           symbol,
 		longOrderStopCh:  make(chan struct{}, 256),
 		shortOrderStopCh: make(chan struct{}, 256),
 		leverage:         lev,
@@ -79,7 +81,7 @@ func (s *doubleOpenStrategy) pubStop() {
 	}
 }
 
-func (s *doubleOpenStrategy) DoubleOpenPositionByChannel(symbol string, boll indicator.Boll) error {
+func (s *doubleOpenStrategy) Do(symbol string, boll indicator.Boll) error {
 	if boll.Cross() {
 		return nil
 	}
@@ -88,7 +90,8 @@ func (s *doubleOpenStrategy) DoubleOpenPositionByChannel(symbol string, boll ind
 		// buy long
 		if s.longOrder == nil {
 
-			longOrder, err := order.CreateOrderDual(symbol, futures.SideTypeBuy, futures.PositionSideTypeLong, calcQty(principal.SingleBetBalance(), boll.LastKline().Close, s.leverage.Leverage))
+			//longOrder, err := order.CreateOrderDual(symbol, futures.SideTypeBuy, futures.PositionSideTypeLong, calcQty(principal.SingleBetBalance(), boll.LastKline().Close, s.leverage.Leverage))
+			longOrder, err := order.CreateOrderDual(symbol, futures.SideTypeBuy, futures.PositionSideTypeLong, principal.Qty())
 			if err != nil {
 				log.Println(err)
 				return err
@@ -100,7 +103,8 @@ func (s *doubleOpenStrategy) DoubleOpenPositionByChannel(symbol string, boll ind
 		}
 		if s.shortOrder == nil {
 			// short sell
-			shortOrder, err := order.CreateOrderDual(symbol, futures.SideTypeSell, futures.PositionSideTypeShort, calcQty(principal.SingleBetBalance(), boll.LastKline().Close, s.leverage.Leverage))
+			//shortOrder, err := order.CreateOrderDual(symbol, futures.SideTypeSell, futures.PositionSideTypeShort, calcQty(principal.SingleBetBalance(), boll.LastKline().Close, s.leverage.Leverage))
+			shortOrder, err := order.CreateOrderDual(symbol, futures.SideTypeSell, futures.PositionSideTypeShort, principal.Qty())
 			if err != nil { // todo close
 				log.Println(err)
 				return err

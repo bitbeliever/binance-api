@@ -157,7 +157,6 @@ func formatPrintEvent(event *futures.WsUserDataEvent) {
 			log.Printf("交易对 %v, 仓位 %v, 方向 %v, 费前累计损益 %v, 持仓未实现盈亏 %v, 入仓价格 %v, 保证金模式 %v, 逐仓保证金: %v\n", position.Symbol, position.Amount, position.Side, position.AccumulatedRealized, position.UnrealizedPnL, position.EntryPrice, position.MarginType, position.IsolatedWallet)
 		}
 
-		// todo 更新余额
 		for _, balance := range event.AccountUpdate.Balances {
 			if balance.Asset == "USDT" {
 				principal.UpdateBalance(helper.Str2Float64(balance.Balance))

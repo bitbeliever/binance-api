@@ -2,11 +2,12 @@ package strategy
 
 import (
 	"fmt"
+	"github.com/bitbeliever/binance-api/pkg/fapi/internal/indicator"
 	"github.com/bitbeliever/binance-api/pkg/helper"
 )
 
 type Strategy interface {
-	Do()
+	Do(string, indicator.Boll) error
 }
 
 //func calcQty(spend float64, closeStr string) string {
@@ -20,4 +21,9 @@ func calcQty(spend float64, closeStr string, leverage int) string {
 	price := helper.Str2Float64(closeStr)
 	return fmt.Sprintf("%.2f", spend*float64(leverage)/price)
 	//return strconv.FormatFloat(math.Round(spend/price*100)/100, 'f', 10, 64)
+}
+
+func calcQty2(spend float64, closeStr string) string {
+	price := helper.Str2Float64(closeStr)
+	return fmt.Sprintf("%.2f", spend/price)
 }

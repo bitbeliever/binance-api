@@ -2,6 +2,7 @@ package spot
 
 import (
 	"github.com/adshao/go-binance/v2"
+	"github.com/bitbeliever/binance-api/pkg/helper"
 	"log"
 )
 
@@ -36,7 +37,7 @@ func KlineStream() {
 		select {
 		case bRes := <-bollCh:
 			//log.Println(bRes)
-			log.Println("spot", toJson(bRes))
+			log.Println("spot", helper.ToJson(bRes))
 		}
 	}
 

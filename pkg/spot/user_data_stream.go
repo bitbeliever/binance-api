@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/adshao/go-binance/v2"
 	"github.com/bitbeliever/binance-api/configs"
+	"github.com/bitbeliever/binance-api/pkg/helper"
 	"log"
 	"time"
 )
@@ -19,7 +20,7 @@ func UserDataStream() {
 
 	doneCh, stopCh, err := binance.WsUserDataServe(listenKey, func(event *binance.WsUserDataEvent) {
 		log.Println("spot event update")
-		log.Println(toJson(event))
+		log.Println(helper.ToJson(event))
 	}, func(err error) {
 		log.Println("user data service err", err)
 

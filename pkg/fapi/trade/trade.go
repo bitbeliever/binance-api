@@ -53,7 +53,6 @@ func UpdateMarginType(symbol string, typ futures.MarginType) error {
 
 // ModifyIsolatedMargin 调整逐仓保证金 /fapi/v1/positionMargin
 func ModifyIsolatedMargin(symbol string) {
-	// todo
 	//NewClient().NewUpdatePositionMarginService().Symbol(symb)
 }
 
@@ -82,7 +81,7 @@ func LeverageSetMax(symbol string) (*futures.SymbolLeverage, error) {
 
 	leverage, err := client.NewClient().NewChangeLeverageService().Symbol(symbol).Leverage(brackets[0].Brackets[0].InitialLeverage).Do(context.Background())
 	if err != nil {
-		return err
+		return nil, err
 	}
 	log.Println("杠杆设置最大:", helper.ToJson(leverage))
 

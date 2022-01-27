@@ -16,3 +16,5 @@ KlineInterval="15m"
 ApiKey="25SFJeqQGvI5Dgklhgse3bFtYpysvcFtGZK2mgUvpImSgJRSMENvvu8QMlTT1atF"
 SecretKey="0vFUpXy52nNp9bLB5sQVzU4vuocmqClupHf8l4DaiHUusBNTKRrIawveRMXUytQY"
 
+[Strategy]
+PyramidSegments=20

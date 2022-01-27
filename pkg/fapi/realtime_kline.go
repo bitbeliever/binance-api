@@ -23,6 +23,7 @@ func RealTimeKline(symbol, interval string) {
 
 	// 杠杆调整
 	lev, err := trade.LeverageSetMax(symbol)
+	_ = lev
 	if err != nil {
 		log.Println(err)
 		return
@@ -33,7 +34,8 @@ func RealTimeKline(symbol, interval string) {
 	log.Println("from history:", helper.ToJson(bRes))
 
 	ch := KlineStream(symbol, interval)
-	var s = strategy.NewDoubleOpenStrategy(lev)
+	//var s = strategy.NewDoubleOpenStrategy(symbol, lev)
+	var s = strategy.NewSmooth(symbol)
 
 	for {
 		select {
@@ -66,7 +68,7 @@ func RealTimeKline(symbol, interval string) {
 			//bRes := indicator.NewBollResult(lines)
 			//log.Println(toJson(bRes), lastKline.Close)
 
-			if err := s.DoubleOpenPositionByChannel(symbol, indicator.NewBoll(lines)); err != nil {
+			if err := s.Do(symbol, indicator.NewBoll(lines)); err != nil {
 				log.Println(err)
 				return
 			}

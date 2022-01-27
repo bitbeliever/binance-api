@@ -16,11 +16,17 @@ type cfg struct {
 	MaxLeverage   bool
 	StopLimit     float64 // 止损
 	TakeProfit    float64 // 止盈
+
+	Strategy strategy
 }
 
 type key struct {
 	ApiKey    string
 	SecretKey string
+}
+
+type strategy struct {
+	PyramidSegments int
 }
 
 func init() {

@@ -2,6 +2,7 @@ package strategy
 
 import (
 	"github.com/adshao/go-binance/v2/futures"
+	"github.com/bitbeliever/binance-api/configs"
 	"github.com/bitbeliever/binance-api/pkg/fapi/internal/indicator"
 	"github.com/bitbeliever/binance-api/pkg/fapi/internal/principal"
 	"github.com/bitbeliever/binance-api/pkg/fapi/order"
@@ -35,7 +36,6 @@ type pyramid struct {
 
 func (p pyramid) calcGap(b indicator.Boll) (float64, float64) {
 	res := b.Result()
-
 	return (res.UP - res.MB) / float64(p.segments), (res.MB - res.DN) / float64(p.segments)
 }
 
@@ -69,9 +69,9 @@ func (p pyramid) phase(b indicator.Boll) int {
 func newPyramid(byArithmetic bool) pyramid {
 
 	p := pyramid{
-		byArithmeticProgression: byArithmetic,  // 算术 等差
-		byGeometricProgression:  !byArithmetic, // 几何 等比
-		segments:                20,            // 段数设为20
+		byArithmeticProgression: byArithmetic,                         // 算术 等差
+		byGeometricProgression:  !byArithmetic,                        // 几何 等比
+		segments:                configs.Cfg.Strategy.PyramidSegments, // 段数设为20
 	}
 	//bRes := boll.Result()
 	//p.firstHalfGap = (bRes.UP - bRes.MB) / float64(p.segments)
@@ -103,10 +103,12 @@ type Smooth struct {
 	//addedShortAmt float64
 	leverage *futures.SymbolLeverage
 
-	state map[int]float64
+	state    map[int]float64
+	longAmt  float64
+	shortAmt float64
 }
 
-func NewSmooth(symbol string, boll indicator.Boll) *Smooth {
+func NewSmooth(symbol string) *Smooth {
 	s := &Smooth{
 		symbol: symbol,
 		p:      newPyramid(true),
@@ -123,25 +125,26 @@ func (s *Smooth) Do(symbol string, boll indicator.Boll) error {
 	// 跨中线 双开
 	if boll.CrossMB() {
 		// 平掉开了的仓位
-		s.reset()
-		if s.opened { // todo
-
+		if !s.opened {
+			s.reset()
 		}
 
-		longOrder, err := order.DualBuyLong(symbol, calcQty(principal.SingleBetBalance(), boll.LastKline().Close, s.leverage.Leverage))
+		//longOrder, err := order.DualBuyLong(symbol, calcQty2(principal.SingleBetBalance(), boll.LastKline().Close))
+		longOrder, err := order.DualBuyLong(symbol, principal.Qty())
 		if err != nil {
 			return err
 		}
 		log.Println("中线 long order", helper.ToJson(longOrder))
-		shortOrder, err := order.DualSellShort(symbol, calcQty(principal.SingleBetBalance(), boll.LastKline().Close, s.leverage.Leverage))
+		//shortOrder, err := order.DualSellShort(symbol, calcQty2(principal.SingleBetBalance(), boll.LastKline().Close))
+		shortOrder, err := order.DualSellShort(symbol, principal.Qty())
 		if err != nil {
 			return err
 		}
 		log.Println("中线 short order", helper.ToJson(shortOrder))
 
-		s.opened = true
 		s.initLongOrder = longOrder
 		s.initShortOrder = shortOrder
+		s.opened = true
 	} else if boll.IsFirstHalf() { // 上半段
 		phase := s.p.phase(boll)
 		if _, ok := s.state[phase]; !ok {
@@ -149,7 +152,7 @@ func (s *Smooth) Do(symbol string, boll indicator.Boll) error {
 			if err != nil {
 				return err
 			}
-			log.Println("上半段开仓", helper.ToJson(o))
+			log.Printf("上半段开仓 phase: %v  order: %v\n", phase, helper.ToJson(o))
 			s.state[phase] = 1
 			log.Println(helper.ToJson(s.state))
 		}
@@ -161,7 +164,7 @@ func (s *Smooth) Do(symbol string, boll indicator.Boll) error {
 			if err != nil {
 				return err
 			}
-			log.Println("下半段开仓", helper.ToJson(o))
+			log.Printf("下半段开仓 phase: %v  order: %v\n", phase, helper.ToJson(o))
 			s.state[phase] = 1
 			log.Println(helper.ToJson(s.state))
 		}
@@ -200,6 +203,8 @@ func (s *Smooth) reset() {
 
 	s.state = make(map[int]float64)
 	s.opened = false
+	s.longAmt = 0
+	s.shortAmt = 0
 }
 
 func (s *Smooth) monitorUPDN() {
@@ -223,4 +228,9 @@ func (s *Smooth) monitorUPDN() {
 			}
 		}
 	}
+}
+
+// 监控 stop loss
+func (s *Smooth) monitorLoss() {
+
 }

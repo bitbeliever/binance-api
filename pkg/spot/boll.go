@@ -2,6 +2,7 @@ package spot
 
 import (
 	"github.com/adshao/go-binance/v2"
+	"github.com/bitbeliever/binance-api/pkg/helper"
 	"math"
 )
 
@@ -26,13 +27,13 @@ func calculateBoll(lines []binance.WsKline) bollResult {
 	N := len(lines)
 	var closeSum float64
 	for _, line := range lines {
-		closeSum += str2Float64(line.Close)
+		closeSum += helper.Str2Float64(line.Close)
 	}
 	MA := closeSum / float64(N)
 
 	closeSum = 0
 	for _, line := range lines {
-		closeSum += math.Pow(str2Float64(line.Close)-MA, 2)
+		closeSum += math.Pow(helper.Str2Float64(line.Close)-MA, 2)
 	}
 	// 标准差
 	MD := math.Sqrt(closeSum / float64(N)) // binance using N instead of N-1
