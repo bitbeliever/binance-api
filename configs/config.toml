@@ -7,7 +7,7 @@ Debug=true
 Emu=false
 KlineInterval="15m"
 
-[Key]
+[key]
 # practical
 #ApiKey="Jlt16Gp7ejTVy26xCp6z0l44f74ZhmJFu7infiKW93Va2bqJTv5tB1Gx4h0jK3ks"
 #SecretKey="hgGzCFKl84xQfaWRbj7kmJsCQOqG6NlOVAoFLAnguO0RZg0Imo0dDR8kSVv8AAZz"
@@ -16,5 +16,8 @@ KlineInterval="15m"
 ApiKey="25SFJeqQGvI5Dgklhgse3bFtYpysvcFtGZK2mgUvpImSgJRSMENvvu8QMlTT1atF"
 SecretKey="0vFUpXy52nNp9bLB5sQVzU4vuocmqClupHf8l4DaiHUusBNTKRrIawveRMXUytQY"
 
-[Strategy]
+[strategy]
 PyramidSegments=20
+
+[redis]
+host="localhost:6379"

@@ -9,6 +9,7 @@ require (
 
 require (
 	github.com/bitly/go-simplejson v0.5.0 // indirect
+	github.com/go-redis/redis v6.15.9+incompatible // indirect
 	github.com/klauspost/compress v1.13.1 // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
 )

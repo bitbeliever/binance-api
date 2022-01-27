@@ -18,11 +18,16 @@ type cfg struct {
 	TakeProfit    float64 // 止盈
 
 	Strategy strategy
+	Redis    redis
 }
 
 type key struct {
 	ApiKey    string
 	SecretKey string
+}
+
+type redis struct {
+	Host string
 }
 
 type strategy struct {

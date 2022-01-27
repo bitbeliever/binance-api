@@ -3,12 +3,19 @@ package strategy
 import (
 	"github.com/adshao/go-binance/v2/futures"
 	"github.com/bitbeliever/binance-api/configs"
+	"github.com/bitbeliever/binance-api/pkg/cache"
 	"github.com/bitbeliever/binance-api/pkg/fapi/internal/indicator"
 	"github.com/bitbeliever/binance-api/pkg/fapi/internal/principal"
 	"github.com/bitbeliever/binance-api/pkg/fapi/order"
 	"github.com/bitbeliever/binance-api/pkg/fapi/position"
 	"github.com/bitbeliever/binance-api/pkg/helper"
 	"log"
+	"strconv"
+)
+
+const (
+	prefix  = "smooth_"
+	pattern = prefix + "*"
 )
 
 type pyramid struct {
@@ -89,21 +96,19 @@ func newPyramid(byArithmetic bool) pyramid {
 type Smooth struct {
 	symbol string
 	p      pyramid
-
 	//firstHalfPyramid  pyramid
 	//secondHalfPyramid pyramid
-	opened bool
-
+	opened         bool
 	initLongOrder  *futures.CreateOrderResponse
 	initShortOrder *futures.CreateOrderResponse
-	upperCh        chan struct{}
-	lowerCh        chan struct{}
 
+	// ==============
+	upperCh chan struct{}
+	lowerCh chan struct{}
 	//addedLongAmt  float64
 	//addedShortAmt float64
 	leverage *futures.SymbolLeverage
-
-	state    map[int]float64
+	//state    map[int]float64
 	longAmt  float64
 	shortAmt float64
 }
@@ -114,7 +119,7 @@ func NewSmooth(symbol string) *Smooth {
 		p:      newPyramid(true),
 		//firstHalfPyramid:  newPyramid(true),
 		//secondHalfPyramid: newPyramid(true),
-		state: make(map[int]float64),
+		//state: make(map[int]float64),
 	}
 
 	//go s.monitorUPDN()
@@ -125,9 +130,17 @@ func (s *Smooth) Do(symbol string, boll indicator.Boll) error {
 	// 跨中线 双开
 	if boll.CrossMB() {
 		// 平掉开了的仓位
-		if !s.opened {
+		if s.posExists() && s.opened {
+			log.Println("reset to close_all positions at", boll.CurrentPrice())
 			s.reset()
+			//return nil
 		}
+
+		//if s.opened {
+		//	log.Println("reset to close_all positions at", boll.CurrentPrice())
+		//	s.reset()
+		//	return nil
+		//}
 
 		//longOrder, err := order.DualBuyLong(symbol, calcQty2(principal.SingleBetBalance(), boll.LastKline().Close))
 		longOrder, err := order.DualBuyLong(symbol, principal.Qty())
@@ -146,27 +159,12 @@ func (s *Smooth) Do(symbol string, boll indicator.Boll) error {
 		s.initShortOrder = shortOrder
 		s.opened = true
 	} else if boll.IsFirstHalf() { // 上半段
-		phase := s.p.phase(boll)
-		if _, ok := s.state[phase]; !ok {
-			o, err := order.DualSellShort(s.symbol, principal.Qty())
-			if err != nil {
-				return err
-			}
-			log.Printf("上半段开仓 phase: %v  order: %v\n", phase, helper.ToJson(o))
-			s.state[phase] = 1
-			log.Println(helper.ToJson(s.state))
+		if err := s.phaseHandler(boll); err != nil {
+			return err
 		}
-
 	} else if boll.IsSecondHalf() { // 下半段
-		phase := s.p.phase(boll)
-		if _, ok := s.state[phase]; !ok {
-			o, err := order.DualBuyLong(s.symbol, principal.Qty())
-			if err != nil {
-				return err
-			}
-			log.Printf("下半段开仓 phase: %v  order: %v\n", phase, helper.ToJson(o))
-			s.state[phase] = 1
-			log.Println(helper.ToJson(s.state))
+		if err := s.phaseHandler(boll); err != nil {
+			return err
 		}
 	} else if boll.CrossUP() { // 触碰上线
 		if s.initLongOrder != nil {
@@ -201,10 +199,36 @@ func (s *Smooth) reset() {
 		log.Println(err)
 	}
 
-	s.state = make(map[int]float64)
 	s.opened = false
 	s.longAmt = 0
 	s.shortAmt = 0
+
+	// 清楚缓存key
+	if err := cache.ClearKeys(pattern); err != nil {
+		log.Println(err)
+		return
+	}
+}
+
+func (s *Smooth) phaseHandler(boll indicator.Boll) error {
+	phase := s.p.phase(boll)
+	b, err := s.phaseExists(phase)
+	if err != nil {
+		return err
+	}
+	// phase不存在
+	if !b {
+		o, err := order.DualBuyLong(s.symbol, principal.Qty())
+		if err != nil {
+			return err
+		}
+		log.Printf("半段开仓 phase: %v  order: %v\n", phase, helper.ToJson(o))
+		if err := cache.Client.Set(KeyPhase(phase), 1, 0).Err(); err != nil {
+			log.Println(err)
+		}
+	}
+
+	return nil
 }
 
 func (s *Smooth) monitorUPDN() {
@@ -230,7 +254,27 @@ func (s *Smooth) monitorUPDN() {
 	}
 }
 
+func (s *Smooth) phaseExists(phase int) (bool, error) {
+	result, err := cache.Client.Exists(KeyPhase(phase)).Result()
+	if err != nil {
+		return false, err
+	}
+	if result > 0 {
+		return true, nil
+	} else {
+		return false, nil
+	}
+}
+
+func (s *Smooth) posExists() bool {
+	return len(cache.Client.Keys(pattern).Val()) > 0
+}
+
 // 监控 stop loss
 func (s *Smooth) monitorLoss() {
 
+}
+
+func KeyPhase(state int) string {
+	return prefix + strconv.Itoa(state)
 }
