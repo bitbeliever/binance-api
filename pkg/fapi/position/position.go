@@ -91,12 +91,15 @@ func CloseAllPositionsBySymbol(symbol string) (err error) {
 		return err
 	}
 
+	var sum float64
 	for _, position := range pos {
+		sum += helper.Str2Float64(position.UnrealizedProfit)
 		if err = ClosePosition(position); err != nil {
 			log.Println(err)
 		}
 	}
 
+	log.Println("CloseAllPosition-Sum:", sum)
 	return err
 }
 

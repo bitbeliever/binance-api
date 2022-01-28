@@ -3,7 +3,10 @@ package configs
 import (
 	"encoding/json"
 	"github.com/BurntSushi/toml"
+	"io"
 	"log"
+	"os"
+	"time"
 )
 
 var Cfg cfg
@@ -36,7 +39,13 @@ type strategy struct {
 
 func init() {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
-	_, err := toml.DecodeFile("configs/config.toml", &Cfg)
+	f, err := os.Create(time.Now().Format("2006-01-02_15_04_05") + ".log")
+	if err != nil {
+		panic(err)
+	}
+	log.SetOutput(io.MultiWriter(os.Stdout, f))
+
+	_, err = toml.DecodeFile("configs/config.toml", &Cfg)
 	if err != nil {
 		panic(err)
 	}

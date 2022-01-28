@@ -114,12 +114,18 @@ type Smooth struct {
 }
 
 func NewSmooth(symbol string) *Smooth {
+	keys := cache.Client.Keys("smooth_*").Val()
+	log.Println("init redis keys:", keys)
+
 	s := &Smooth{
 		symbol: symbol,
 		p:      newPyramid(true),
 		//firstHalfPyramid:  newPyramid(true),
 		//secondHalfPyramid: newPyramid(true),
 		//state: make(map[int]float64),
+	}
+	if len(keys) > 0 {
+		s.opened = true
 	}
 
 	//go s.monitorUPDN()
@@ -130,33 +136,36 @@ func (s *Smooth) Do(symbol string, boll indicator.Boll) error {
 	// 跨中线 双开
 	if boll.CrossMB() {
 		// 平掉开了的仓位
-		if s.posExists() && s.opened {
+		if s.positionExists() && s.opened {
 			log.Println("reset to close_all positions at", boll.CurrentPrice())
 			s.reset()
 			//return nil
 		}
 
-		//if s.opened {
-		//	log.Println("reset to close_all positions at", boll.CurrentPrice())
-		//	s.reset()
-		//	return nil
-		//}
-
-		//longOrder, err := order.DualBuyLong(symbol, calcQty2(principal.SingleBetBalance(), boll.LastKline().Close))
-		longOrder, err := order.DualBuyLong(symbol, principal.Qty())
-		if err != nil {
-			return err
+		if s.opened {
+			return nil
 		}
-		log.Println("中线 long order", helper.ToJson(longOrder))
-		//shortOrder, err := order.DualSellShort(symbol, calcQty2(principal.SingleBetBalance(), boll.LastKline().Close))
-		shortOrder, err := order.DualSellShort(symbol, principal.Qty())
-		if err != nil {
-			return err
-		}
-		log.Println("中线 short order", helper.ToJson(shortOrder))
 
-		s.initLongOrder = longOrder
-		s.initShortOrder = shortOrder
+		if s.initLongOrder == nil {
+			//longOrder, err := order.DualBuyLong(symbol, calcQty2(principal.SingleBetBalance(), boll.LastKline().Close))
+			longOrder, err := order.DualBuyLong(symbol, principal.Qty())
+			if err != nil {
+				return err
+			}
+			log.Println("中线 long order", helper.ToJson(longOrder))
+			s.initLongOrder = longOrder
+		}
+
+		if s.initShortOrder == nil {
+			//shortOrder, err := order.DualSellShort(symbol, calcQty2(principal.SingleBetBalance(), boll.LastKline().Close))
+			shortOrder, err := order.DualSellShort(symbol, principal.Qty())
+			if err != nil {
+				return err
+			}
+			log.Println("中线 short order", helper.ToJson(shortOrder))
+			s.initShortOrder = shortOrder
+		}
+
 		s.opened = true
 	} else if boll.IsFirstHalf() { // 上半段
 		if err := s.phaseHandler(boll); err != nil {
@@ -183,15 +192,6 @@ func (s *Smooth) Do(symbol string, boll indicator.Boll) error {
 	}
 
 	return nil
-}
-
-func (s *Smooth) CloseBaseLongShort() {
-	// 平所以仓
-	if err := position.CloseAllPositionsBySymbol(s.symbol); err != nil {
-		log.Println(err)
-		return
-	}
-
 }
 
 func (s *Smooth) reset() {
@@ -266,7 +266,7 @@ func (s *Smooth) phaseExists(phase int) (bool, error) {
 	}
 }
 
-func (s *Smooth) posExists() bool {
+func (s *Smooth) positionExists() bool {
 	return len(cache.Client.Keys(pattern).Val()) > 0
 }
 

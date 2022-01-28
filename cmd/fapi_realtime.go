@@ -15,7 +15,7 @@ func main() {
 		log.Println(err)
 		return
 	}
-	log.Println("positions", helper.ToJsonIndent(p))
+	log.Println("positions", helper.ToJson(p))
 	a, err := account.QueryAccountAssets()
 	if err != nil {
 		log.Println(err)
