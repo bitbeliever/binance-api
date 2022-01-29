@@ -39,7 +39,7 @@ type strategy struct {
 
 func init() {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
-	f, err := os.Create(time.Now().Format("2006-01-02_15_04_05") + ".log")
+	f, err := os.Create(time.Now().Format("log/2006-01-02_15_04_05") + ".log")
 	if err != nil {
 		panic(err)
 	}

@@ -99,7 +99,7 @@ func CloseAllPositionsBySymbol(symbol string) (err error) {
 		}
 	}
 
-	log.Println("CloseAllPosition-Sum:", sum)
+	log.Println("profit-sum:", sum)
 	return err
 }
 

@@ -2,7 +2,10 @@ package main
 
 import (
 	"github.com/bitbeliever/binance-api/pkg/account"
+	"github.com/bitbeliever/binance-api/pkg/cache"
+	"github.com/bitbeliever/binance-api/pkg/fapi/position"
 	"github.com/bitbeliever/binance-api/pkg/helper"
+	"log"
 )
 
 func main() {
@@ -12,13 +15,17 @@ func main() {
 	helper.JsonLog(account.QueryAccountPositions())
 
 	//closeOp()
-	//position.CloseAllPositions()
+	//closeAndClearKeys()
 	helper.JsonLog(account.QueryAccountPositions())
 	helper.JsonLog(account.QueryBalance())
 
 	//fapi.ComparePNLTest()
 }
 
-func open() {
-	//order.DualBuyLong(fapi.LTC)
+func closeAndClearKeys() {
+	position.CloseAllPositions()
+	if err := cache.ClearKeys("smooth_*"); err != nil {
+		log.Println(err)
+	}
+
 }

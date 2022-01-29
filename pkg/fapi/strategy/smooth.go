@@ -177,17 +177,21 @@ func (s *Smooth) Do(symbol string, boll indicator.Boll) error {
 		}
 	} else if boll.CrossUP() { // 触碰上线
 		if s.initLongOrder != nil {
+			log.Println("上线 close")
 			err := position.ClosePositionByOrderResp(s.initLongOrder)
 			if err != nil {
 				return nil
 			}
+			s.initLongOrder = nil
 		}
 	} else if boll.CrossDN() { // 触碰下线
 		if s.initShortOrder != nil {
+			log.Println("下线 close")
 			err := position.ClosePositionByOrderResp(s.initShortOrder)
 			if err != nil {
 				return err
 			}
+			s.initShortOrder = nil
 		}
 	}
 
@@ -218,7 +222,13 @@ func (s *Smooth) phaseHandler(boll indicator.Boll) error {
 	}
 	// phase不存在
 	if !b {
-		o, err := order.DualBuyLong(s.symbol, principal.Qty())
+		var o *futures.CreateOrderResponse
+		var err error
+		if phase > 0 {
+			o, err = order.DualSellShort(s.symbol, principal.Qty())
+		} else {
+			o, err = order.DualBuyLong(s.symbol, principal.Qty())
+		}
 		if err != nil {
 			return err
 		}
