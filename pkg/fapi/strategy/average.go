@@ -1,5 +1,13 @@
 package strategy
 
+import (
+	"github.com/adshao/go-binance/v2/futures"
+	"github.com/bitbeliever/binance-api/pkg/fapi/indicator"
+	"github.com/bitbeliever/binance-api/pkg/fapi/order"
+	"github.com/bitbeliever/binance-api/pkg/helper"
+	"log"
+)
+
 /*
 技术指标选择平均价。
 以比特币举例，当比特币30分钟线的实际价格和average price相差达到200美金，我们开单，在水位线上我们开空单，水位线以下我们开空单，平仓价以average price 的动态价格为准。
@@ -13,9 +21,32 @@ package strategy
 
 type Average struct {
 	symbol string
+	gap    float64
 }
 
-func NewAverage(symbol string) Average {
+func NewAverage(symbol string, gap float64) Average {
 
-	return Average{}
+	return Average{
+		symbol: symbol,
+		gap:    gap,
+	}
+}
+
+func (a Average) Do(lines []*futures.Kline) error {
+	ma := indicator.Ind(lines).Ma()
+	if helper.Str2Float64(ma.CurrentPrice()) >= helper.Str2Float64(ma.AveragePrice())+a.gap {
+		resp, err := order.DualSellShortPrice(a.symbol, "0.01", ma.AveragePrice())
+		if err != nil {
+			return err
+		}
+		log.Printf("avg sell short order %v  avg: %s, current: %s \n", helper.ToJson(resp), ma.AveragePrice(), ma.CurrentPrice())
+	} else if helper.Str2Float64(ma.CurrentPrice()) <= helper.Str2Float64(ma.CurrentPrice())-a.gap {
+		resp, err := order.DualBuyLongPrice(a.symbol, "0.01", ma.AveragePrice())
+		if err != nil {
+			return err
+		}
+		log.Printf("avg buy long order %v  avg: %s, current: %s \n", helper.ToJson(resp), ma.AveragePrice(), ma.CurrentPrice())
+	}
+
+	return nil
 }

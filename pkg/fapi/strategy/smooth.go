@@ -4,7 +4,7 @@ import (
 	"github.com/adshao/go-binance/v2/futures"
 	"github.com/bitbeliever/binance-api/configs"
 	"github.com/bitbeliever/binance-api/pkg/cache"
-	"github.com/bitbeliever/binance-api/pkg/fapi/internal/indicator"
+	"github.com/bitbeliever/binance-api/pkg/fapi/indicator"
 	"github.com/bitbeliever/binance-api/pkg/fapi/internal/principal"
 	"github.com/bitbeliever/binance-api/pkg/fapi/order"
 	"github.com/bitbeliever/binance-api/pkg/fapi/position"
@@ -132,7 +132,8 @@ func NewSmooth(symbol string) *Smooth {
 	return s
 }
 
-func (s *Smooth) Do(symbol string, boll indicator.Boll) error {
+func (s *Smooth) Do(lines []*futures.Kline) error {
+	boll := indicator.Ind(lines).Boll()
 	// 跨中线 双开
 	if boll.CrossMB() {
 		// 平掉开了的仓位
@@ -148,7 +149,7 @@ func (s *Smooth) Do(symbol string, boll indicator.Boll) error {
 
 		if s.initLongOrder == nil {
 			//longOrder, err := order.DualBuyLong(symbol, calcQty2(principal.SingleBetBalance(), boll.LastKline().Close))
-			longOrder, err := order.DualBuyLong(symbol, principal.Qty())
+			longOrder, err := order.DualBuyLong(s.symbol, principal.Qty())
 			if err != nil {
 				return err
 			}
@@ -158,7 +159,7 @@ func (s *Smooth) Do(symbol string, boll indicator.Boll) error {
 
 		if s.initShortOrder == nil {
 			//shortOrder, err := order.DualSellShort(symbol, calcQty2(principal.SingleBetBalance(), boll.LastKline().Close))
-			shortOrder, err := order.DualSellShort(symbol, principal.Qty())
+			shortOrder, err := order.DualSellShort(s.symbol, principal.Qty())
 			if err != nil {
 				return err
 			}
@@ -180,7 +181,8 @@ func (s *Smooth) Do(symbol string, boll indicator.Boll) error {
 			log.Println("上线 close")
 			err := position.ClosePositionByOrderResp(s.initLongOrder)
 			if err != nil {
-				return nil
+				log.Println(err)
+				//return err
 			}
 			s.initLongOrder = nil
 		}
@@ -189,7 +191,8 @@ func (s *Smooth) Do(symbol string, boll indicator.Boll) error {
 			log.Println("下线 close")
 			err := position.ClosePositionByOrderResp(s.initShortOrder)
 			if err != nil {
-				return err
+				log.Println(err)
+				//return err
 			}
 			s.initShortOrder = nil
 		}

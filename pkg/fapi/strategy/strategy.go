@@ -2,12 +2,12 @@ package strategy
 
 import (
 	"fmt"
-	"github.com/bitbeliever/binance-api/pkg/fapi/internal/indicator"
+	"github.com/adshao/go-binance/v2/futures"
 	"github.com/bitbeliever/binance-api/pkg/helper"
 )
 
 type Strategy interface {
-	Do(string, indicator.Boll) error
+	Do([]*futures.Kline) error
 }
 
 //func calcQty(spend float64, closeStr string) string {

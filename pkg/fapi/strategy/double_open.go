@@ -2,7 +2,7 @@ package strategy
 
 import (
 	"github.com/adshao/go-binance/v2/futures"
-	"github.com/bitbeliever/binance-api/pkg/fapi/internal/indicator"
+	"github.com/bitbeliever/binance-api/pkg/fapi/indicator"
 	"github.com/bitbeliever/binance-api/pkg/fapi/internal/principal"
 	"github.com/bitbeliever/binance-api/pkg/fapi/order"
 	"github.com/bitbeliever/binance-api/pkg/fapi/position"
@@ -81,7 +81,7 @@ func (s *doubleOpenStrategy) pubStop() {
 	}
 }
 
-func (s *doubleOpenStrategy) Do(symbol string, boll indicator.Boll) error {
+func (s *doubleOpenStrategy) Do(boll indicator.Boll) error {
 	if boll.Cross() {
 		return nil
 	}
@@ -91,7 +91,7 @@ func (s *doubleOpenStrategy) Do(symbol string, boll indicator.Boll) error {
 		if s.longOrder == nil {
 
 			//longOrder, err := order.CreateOrderDual(symbol, futures.SideTypeBuy, futures.PositionSideTypeLong, calcQty(principal.SingleBetBalance(), boll.LastKline().Close, s.leverage.Leverage))
-			longOrder, err := order.CreateOrderDual(symbol, futures.SideTypeBuy, futures.PositionSideTypeLong, principal.Qty())
+			longOrder, err := order.CreateOrderDual(s.symbol, futures.SideTypeBuy, futures.PositionSideTypeLong, principal.Qty())
 			if err != nil {
 				log.Println(err)
 				return err
@@ -104,7 +104,7 @@ func (s *doubleOpenStrategy) Do(symbol string, boll indicator.Boll) error {
 		if s.shortOrder == nil {
 			// short sell
 			//shortOrder, err := order.CreateOrderDual(symbol, futures.SideTypeSell, futures.PositionSideTypeShort, calcQty(principal.SingleBetBalance(), boll.LastKline().Close, s.leverage.Leverage))
-			shortOrder, err := order.CreateOrderDual(symbol, futures.SideTypeSell, futures.PositionSideTypeShort, principal.Qty())
+			shortOrder, err := order.CreateOrderDual(s.symbol, futures.SideTypeSell, futures.PositionSideTypeShort, principal.Qty())
 			if err != nil { // todo close
 				log.Println(err)
 				return err
