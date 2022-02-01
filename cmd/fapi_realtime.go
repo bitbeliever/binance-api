@@ -7,5 +7,5 @@ import (
 
 func main() {
 	const symbol = fapi.LTC
-	fapi.RunStrategy(strategy.NewShow(), symbol, "15m", 20)
+	fapi.RunStrategy(strategy.NewSmooth(symbol), symbol, "15m", 21)
 }

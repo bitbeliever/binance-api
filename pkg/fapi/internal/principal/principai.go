@@ -28,6 +28,7 @@ type totalBalance struct {
 	TakeProfit float64 // 止盈率
 
 	stopLossFn func()
+	profitSum  float64
 }
 
 // 止损的pnl
@@ -57,6 +58,14 @@ func UpdateBalance(balance float64) {
 	defer tb.mu.Unlock()
 
 	tb.Balance = balance
+}
+
+func ProfitSumUpdate(profit float64) float64 {
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
+
+	tb.profitSum += profit
+	return tb.profitSum
 }
 
 // Qty !!todo

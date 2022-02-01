@@ -1,6 +1,7 @@
 package strategy
 
 import (
+	"encoding/json"
 	"github.com/adshao/go-binance/v2/futures"
 	"github.com/bitbeliever/binance-api/configs"
 	"github.com/bitbeliever/binance-api/pkg/cache"
@@ -11,6 +12,7 @@ import (
 	"github.com/bitbeliever/binance-api/pkg/helper"
 	"log"
 	"strconv"
+	"time"
 )
 
 const (
@@ -117,12 +119,19 @@ func NewSmooth(symbol string) *Smooth {
 	keys := cache.Client.Keys("smooth_*").Val()
 	log.Println("init redis keys:", keys)
 
+	o1, o2, err := resumeInitOrder()
+	if err != nil {
+		log.Println(err)
+	}
+
 	s := &Smooth{
 		symbol: symbol,
 		p:      newPyramid(true),
 		//firstHalfPyramid:  newPyramid(true),
 		//secondHalfPyramid: newPyramid(true),
 		//state: make(map[int]float64),
+		initLongOrder:  o1,
+		initShortOrder: o2,
 	}
 	if len(keys) > 0 {
 		s.opened = true
@@ -155,6 +164,9 @@ func (s *Smooth) Do(lines []*futures.Kline) error {
 			}
 			log.Println("中线 long order", helper.ToJson(longOrder))
 			s.initLongOrder = longOrder
+			if err := s.storeLongOrder(longOrder); err != nil {
+				log.Println(err)
+			}
 		}
 
 		if s.initShortOrder == nil {
@@ -165,6 +177,9 @@ func (s *Smooth) Do(lines []*futures.Kline) error {
 			}
 			log.Println("中线 short order", helper.ToJson(shortOrder))
 			s.initShortOrder = shortOrder
+			if err := s.storeShortOrder(shortOrder); err != nil {
+				log.Println(err)
+			}
 		}
 
 		s.opened = true
@@ -201,14 +216,40 @@ func (s *Smooth) Do(lines []*futures.Kline) error {
 	return nil
 }
 
+type profitResult struct {
+	profit   float64
+	ts       int64
+	datetime string
+}
+
+func newProfitResult(profit float64) profitResult {
+	now := time.Now()
+	return profitResult{
+		profit:   profit,
+		ts:       now.Unix(),
+		datetime: now.Format("2006-01-02 15:04:05"),
+	}
+}
+
 func (s *Smooth) reset() {
-	if err := position.CloseAllPositionsBySymbol(s.symbol); err != nil {
+	sum, err := position.CloseAllPositionsBySymbol(s.symbol)
+	if err != nil {
+		log.Println(err)
+	}
+
+	log.Println("profit-sum:", sum)
+	totalProfit := principal.ProfitSumUpdate(sum)
+	log.Println("total profit sum", totalProfit)
+	b, _ := json.Marshal(newProfitResult(totalProfit))
+	if err := cache.Client.LPush("profit_smooth", string(b)).Err(); err != nil {
 		log.Println(err)
 	}
 
 	s.opened = false
 	s.longAmt = 0
 	s.shortAmt = 0
+	s.initShortOrder = nil
+	s.initLongOrder = nil
 
 	// 清楚缓存key
 	if err := cache.ClearKeys(pattern); err != nil {
@@ -236,7 +277,7 @@ func (s *Smooth) phaseHandler(boll indicator.Boll) error {
 			return err
 		}
 		log.Printf("半段开仓 phase: %v  order: %v\n", phase, helper.ToJson(o))
-		if err := cache.Client.Set(KeyPhase(phase), 1, 0).Err(); err != nil {
+		if err := cache.Client.Set(s.KeyPhase(phase), 1, 0).Err(); err != nil {
 			log.Println(err)
 		}
 	}
@@ -268,7 +309,7 @@ func (s *Smooth) monitorUPDN() {
 }
 
 func (s *Smooth) phaseExists(phase int) (bool, error) {
-	result, err := cache.Client.Exists(KeyPhase(phase)).Result()
+	result, err := cache.Client.Exists(s.KeyPhase(phase)).Result()
 	if err != nil {
 		return false, err
 	}
@@ -288,6 +329,53 @@ func (s *Smooth) monitorLoss() {
 
 }
 
-func KeyPhase(state int) string {
+func (s *Smooth) KeyPhase(state int) string {
 	return prefix + strconv.Itoa(state)
+}
+
+func (s *Smooth) storeLongOrder(order *futures.CreateOrderResponse) error {
+	orderLongBytes, err := json.Marshal(order)
+	if err != nil {
+		return err
+	}
+	if err := cache.Client.Set(prefix+"init_long", string(orderLongBytes), 0).Err(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Smooth) storeShortOrder(order *futures.CreateOrderResponse) error {
+	orderShortBytes, err := json.Marshal(order)
+	if err != nil {
+		return err
+	}
+	if err := cache.Client.Set(prefix+"init_short", string(orderShortBytes), 0).Err(); err != nil {
+		return err
+	}
+	return nil
+}
+
+//func storeInitOrders(orderLong *futures.CreateOrderResponse, orderShort *futures.CreateOrderResponse) error {
+//	return nil
+//}
+
+func resumeInitOrder() (orderLong *futures.CreateOrderResponse, orderShort *futures.CreateOrderResponse, err error) {
+	long, err := cache.Client.Get(prefix + "init_long").Result()
+	if err != nil {
+		return
+	}
+
+	short, err := cache.Client.Get(prefix + "init_short").Result()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if err = json.Unmarshal([]byte(long), orderLong); err != nil {
+		return
+	}
+	if err = json.Unmarshal([]byte(short), orderShort); err != nil {
+		return
+	}
+
+	return
 }

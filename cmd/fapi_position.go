@@ -15,7 +15,7 @@ func main() {
 	helper.JsonLog(account.QueryAccountPositions())
 
 	//closeOp()
-	closeAndClearKeys()
+	//closeAndClearKeys()
 	helper.JsonLog(account.QueryAccountPositions())
 	helper.JsonLog(account.QueryBalance())
 

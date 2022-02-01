@@ -85,10 +85,10 @@ func CloseAllPositions() {
 	}
 }
 
-func CloseAllPositionsBySymbol(symbol string) (err error) {
+func CloseAllPositionsBySymbol(symbol string) (float64, error) {
 	pos, err := account.QueryAccountPositionsBySymbol(symbol)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	var sum float64
@@ -99,8 +99,7 @@ func CloseAllPositionsBySymbol(symbol string) (err error) {
 		}
 	}
 
-	log.Println("profit-sum:", sum)
-	return err
+	return sum, nil
 }
 
 // 仓位监控

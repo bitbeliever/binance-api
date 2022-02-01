@@ -6,6 +6,6 @@ import (
 )
 
 func main() {
-	const symbol = fapi.DOG
-	fapi.RunStrategy(strategy.NewAverage(symbol, 0.1), symbol, "30m", 7)
+	const symbol = fapi.LTC
+	fapi.RunStrategy(strategy.NewShow(), symbol, "15m", 21)
 }
