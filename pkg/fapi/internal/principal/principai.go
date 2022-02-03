@@ -2,6 +2,7 @@ package principal
 
 import (
 	"github.com/adshao/go-binance/v2/futures"
+	"github.com/bitbeliever/binance-api/configs"
 	"github.com/bitbeliever/binance-api/pkg/account"
 	"github.com/bitbeliever/binance-api/pkg/helper"
 	"log"
@@ -70,7 +71,7 @@ func ProfitSumUpdate(profit float64) float64 {
 
 // Qty !!todo
 func Qty() string {
-	return "0.08"
+	return configs.Cfg.Qty
 }
 
 func init() {

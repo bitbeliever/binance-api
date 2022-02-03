@@ -1,6 +1,7 @@
 package indicator
 
 import (
+	"fmt"
 	"github.com/adshao/go-binance/v2/futures"
 	"github.com/bitbeliever/binance-api/pkg/helper"
 	"math"
@@ -12,6 +13,10 @@ type Boll struct {
 }
 type BollResult struct {
 	UP, MB, DN float64
+}
+
+func (b BollResult) MBStr() string {
+	return fmt.Sprintf("%.2f", b.MB)
 }
 
 func NewBoll(klines []*futures.Kline) Boll {
@@ -110,6 +115,12 @@ func (b Boll) IsSecondHalf() bool {
 func (b Boll) IsFirstHalf() bool {
 	price := helper.Str2Float64(b.LastKline().Close)
 	return price > b.res.MB && price < b.res.UP
+}
+
+// IsInsideBand 在布林带内
+func (b Boll) IsInsideBand() bool {
+	price := helper.Str2Float64(b.LastKline().Close)
+	return price > b.res.DN && price < b.res.UP
 }
 
 func NewBollResult(klines []*futures.Kline) BollResult {

@@ -22,31 +22,50 @@ import (
 type Average struct {
 	symbol string
 	gap    float64
+	short  *futures.CreateOrderResponse
+	long   *futures.CreateOrderResponse
 }
 
-func NewAverage(symbol string, gap float64) Average {
-
-	return Average{
+func NewAverage(symbol string, gap float64) *Average {
+	return &Average{
 		symbol: symbol,
 		gap:    gap,
 	}
 }
 
-func (a Average) Do(lines []*futures.Kline) error {
+func (a *Average) Do(lines []*futures.Kline) error {
 	ma := indicator.Ind(lines).Ma()
+	boll := indicator.Ind(lines).Boll()
+	if !boll.IsInsideBand() {
+		return nil
+	}
+
 	if helper.Str2Float64(ma.CurrentPrice()) >= helper.Str2Float64(ma.AveragePrice())+a.gap {
-		resp, err := order.DualSellShortPrice(a.symbol, "0.01", ma.AveragePrice())
-		if err != nil {
-			return err
+		if a.short == nil {
+			resp, err := order.DualSellShortSL(a.symbol, "0.08", ma.AveragePrice())
+			if err != nil {
+				return err
+			}
+			log.Printf("avg sell short avg: %s, current: %s order %v  \n", ma.AveragePrice(), ma.CurrentPrice(), helper.ToJson(resp))
+			if err != nil {
+				return err
+			}
+			a.short = resp
 		}
-		log.Printf("avg sell short order %v  avg: %s, current: %s \n", helper.ToJson(resp), ma.AveragePrice(), ma.CurrentPrice())
-	} else if helper.Str2Float64(ma.CurrentPrice()) <= helper.Str2Float64(ma.CurrentPrice())-a.gap {
-		resp, err := order.DualBuyLongPrice(a.symbol, "0.01", ma.AveragePrice())
-		if err != nil {
-			return err
+	} else if helper.Str2Float64(ma.CurrentPrice()) <= helper.Str2Float64(ma.AveragePrice())-a.gap {
+		if a.long == nil {
+			resp, err := order.DualBuyLongSL(a.symbol, "0.08", ma.AveragePrice())
+			if err != nil {
+				return err
+			}
+			log.Printf("avg buy long avg: %s, current: %s order %v  \n", ma.AveragePrice(), ma.CurrentPrice(), helper.ToJson(resp))
+			a.long = resp
 		}
-		log.Printf("avg buy long order %v  avg: %s, current: %s \n", helper.ToJson(resp), ma.AveragePrice(), ma.CurrentPrice())
 	}
 
 	return nil
+}
+
+func (a *Average) resume() {
+
 }

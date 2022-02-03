@@ -12,7 +12,7 @@ import (
 
 // RealTimeKline 实时获取最新k线数据和实时计算boll
 func RealTimeKline(symbol, interval string, limit int) (chan []*futures.Kline, error) {
-	log.Printf("实时数据 symbol: %v, interval %v \n: ", symbol, interval)
+	log.Printf("实时数据 symbol: %v, interval: %v limit: %v \n: ", symbol, interval, limit)
 	lines, err := KlineHistory(symbol, interval, limit)
 	if err != nil {
 		log.Println(err)

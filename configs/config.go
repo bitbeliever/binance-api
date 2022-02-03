@@ -19,6 +19,8 @@ type cfg struct {
 	MaxLeverage   bool
 	StopLimit     float64 // 止损
 	TakeProfit    float64 // 止盈
+	Qty           string
+	Symbol        string
 
 	Strategy strategy
 	Redis    redis

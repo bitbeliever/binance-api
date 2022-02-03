@@ -28,8 +28,7 @@ type pyramid struct {
 	//gap                     float64
 	//firstHalfGap  float64
 	//secondHalfGap float64
-
-	layers int // 金字塔层数
+	//layers int // 金字塔层数
 }
 
 //func (p pyramid) phase2(price string, MB float64) int {
@@ -136,6 +135,9 @@ func NewSmooth(symbol string) *Smooth {
 	if len(keys) > 0 {
 		s.opened = true
 	}
+	if o1 != nil || o2 != nil {
+		s.opened = true
+	}
 
 	//go s.monitorUPDN()
 	return s
@@ -156,31 +158,31 @@ func (s *Smooth) Do(lines []*futures.Kline) error {
 			return nil
 		}
 
-		if s.initLongOrder == nil {
-			//longOrder, err := order.DualBuyLong(symbol, calcQty2(principal.SingleBetBalance(), boll.LastKline().Close))
-			longOrder, err := order.DualBuyLong(s.symbol, principal.Qty())
-			if err != nil {
-				return err
-			}
-			log.Println("中线 long order", helper.ToJson(longOrder))
-			s.initLongOrder = longOrder
-			if err := s.storeLongOrder(longOrder); err != nil {
-				log.Println(err)
-			}
-		}
-
-		if s.initShortOrder == nil {
-			//shortOrder, err := order.DualSellShort(symbol, calcQty2(principal.SingleBetBalance(), boll.LastKline().Close))
-			shortOrder, err := order.DualSellShort(s.symbol, principal.Qty())
-			if err != nil {
-				return err
-			}
-			log.Println("中线 short order", helper.ToJson(shortOrder))
-			s.initShortOrder = shortOrder
-			if err := s.storeShortOrder(shortOrder); err != nil {
-				log.Println(err)
-			}
-		}
+		//if s.initLongOrder == nil {
+		//	//longOrder, err := order.DualBuyLong(symbol, calcQty2(principal.SingleBetBalance(), boll.LastKline().Close))
+		//	longOrder, err := order.DualBuyLong(s.symbol, principal.Qty())
+		//	if err != nil {
+		//		return err
+		//	}
+		//	log.Println("中线 long order", helper.ToJson(longOrder))
+		//	s.initLongOrder = longOrder
+		//	if err := s.storeLongOrder(longOrder); err != nil {
+		//		log.Println(err)
+		//	}
+		//}
+		//
+		//if s.initShortOrder == nil {
+		//	//shortOrder, err := order.DualSellShort(symbol, calcQty2(principal.SingleBetBalance(), boll.LastKline().Close))
+		//	shortOrder, err := order.DualSellShort(s.symbol, principal.Qty())
+		//	if err != nil {
+		//		return err
+		//	}
+		//	log.Println("中线 short order", helper.ToJson(shortOrder))
+		//	s.initShortOrder = shortOrder
+		//	if err := s.storeShortOrder(shortOrder); err != nil {
+		//		log.Println(err)
+		//	}
+		//}
 
 		s.opened = true
 	} else if boll.IsFirstHalf() { // 上半段
@@ -217,17 +219,17 @@ func (s *Smooth) Do(lines []*futures.Kline) error {
 }
 
 type profitResult struct {
-	profit   float64
-	ts       int64
-	datetime string
+	Profit   float64
+	Ts       int64
+	Datetime string
 }
 
 func newProfitResult(profit float64) profitResult {
 	now := time.Now()
 	return profitResult{
-		profit:   profit,
-		ts:       now.Unix(),
-		datetime: now.Format("2006-01-02 15:04:05"),
+		Profit:   profit,
+		Ts:       now.Unix(),
+		Datetime: now.Format("2006-01-02 15:04:05"),
 	}
 }
 
@@ -237,13 +239,14 @@ func (s *Smooth) reset() {
 		log.Println(err)
 	}
 
-	log.Println("profit-sum:", sum)
+	log.Println("Profit-sum:", sum)
 	totalProfit := principal.ProfitSumUpdate(sum)
-	log.Println("total profit sum", totalProfit)
+	log.Println("total Profit sum", totalProfit)
 	b, _ := json.Marshal(newProfitResult(totalProfit))
 	if err := cache.Client.LPush("profit_smooth", string(b)).Err(); err != nil {
 		log.Println(err)
 	}
+	cache.Client.Del(prefix+"init_long", prefix+"init_short")
 
 	s.opened = false
 	s.longAmt = 0
@@ -251,11 +254,16 @@ func (s *Smooth) reset() {
 	s.initShortOrder = nil
 	s.initLongOrder = nil
 
+	//if err := beeep.Notify("profit", fmt.Sprintf("%v", sum), "assets/information.png"); err != nil {
+	//	log.Println(err)
+	//}
+
 	// 清楚缓存key
 	if err := cache.ClearKeys(pattern); err != nil {
 		log.Println(err)
 		return
 	}
+
 }
 
 func (s *Smooth) phaseHandler(boll indicator.Boll) error {

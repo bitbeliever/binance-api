@@ -6,6 +6,8 @@ MaxLeverage=true
 Debug=true
 Emu=false
 KlineInterval="15m"
+Qty="0.08"
+Symbol="BCHUSDT"
 
 [key]
 # practical

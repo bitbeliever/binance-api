@@ -189,17 +189,17 @@ func DualBuyLong(symbol string, qty string) (*futures.CreateOrderResponse, error
 	return order, nil
 }
 
-func DualBuyLongPrice(symbol string, qty string, price string) (*futures.CreateOrderResponse, error) {
+func DualBuyLongSL(symbol string, qty string, price string) (*futures.CreateOrderResponse, error) {
 	order, err := client.NewClient().NewCreateOrderService().
 		Symbol(symbol).
 		Side(futures.SideTypeBuy).
-		Type(futures.OrderTypeLimit).
+		Type(futures.OrderTypeStopMarket).
 		Quantity(qty).
 		PositionSide(futures.PositionSideTypeLong).    // 持仓方向 单向必填默认为BOTH
 		WorkingType(futures.WorkingTypeContractPrice). // stopPrice 触发类型: MARK_PRICE(标记价格), CONTRACT_PRICE(合约最新价). 默认 CONTRACT_PRICE
 		NewOrderResponseType(futures.NewOrderRespTypeRESULT).
-		//StopPrice().                                   // 触发价 STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET 需要此参数
-		Price(price). // 委托价格
+		StopPrice(price). // 触发价 STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET 需要此参数
+		//Price(price). // 委托价格
 		//closePositionByOrderResp(true). //true, false；触发后全部平仓，仅支持STOP_MARKET和TAKE_PROFIT_MARKET；不与quantity合用；自带只平仓效果，不与reduceOnly 合用
 		//PriceProtect() // 条件单触发保护："TRUE","FALSE", 默认"FALSE". 仅 STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET 需要此参数
 		Do(context.Background())
@@ -210,17 +210,17 @@ func DualBuyLongPrice(symbol string, qty string, price string) (*futures.CreateO
 	return order, nil
 }
 
-func DualSellShortPrice(symbol string, qty string, price string) (*futures.CreateOrderResponse, error) {
+func DualSellShortSL(symbol string, qty string, price string) (*futures.CreateOrderResponse, error) {
 	order, err := client.NewClient().NewCreateOrderService().
 		Symbol(symbol).
 		Side(futures.SideTypeSell).
-		Type(futures.OrderTypeMarket).
+		Type(futures.OrderTypeStopMarket).
 		Quantity(qty).
 		PositionSide(futures.PositionSideTypeShort).   // 持仓方向 单向必填默认为BOTH
 		WorkingType(futures.WorkingTypeContractPrice). // stopPrice 触发类型: MARK_PRICE(标记价格), CONTRACT_PRICE(合约最新价). 默认 CONTRACT_PRICE
 		NewOrderResponseType(futures.NewOrderRespTypeRESULT).
-		//StopPrice().                                   // 触发价 STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET 需要此参数
-		Price(price). // 委托价格
+		StopPrice(price). // 触发价 STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET 需要此参数
+		//Price(price). // 委托价格
 		//closePositionByOrderResp(true). //true, false；触发后全部平仓，仅支持STOP_MARKET和TAKE_PROFIT_MARKET；不与quantity合用；自带只平仓效果，不与reduceOnly 合用
 		//PriceProtect() // 条件单触发保护："TRUE","FALSE", 默认"FALSE". 仅 STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET 需要此参数
 		Do(context.Background())

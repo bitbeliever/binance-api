@@ -181,7 +181,7 @@ func (s *doubleOpenStrategy) monitorOrderSL(p *futures.CreateOrderResponse, stop
 					return
 				}
 
-				// 消除monitor take profit
+				// 消除monitor take Profit
 				if p.PositionSide == futures.PositionSideTypeLong && s.longOrder != nil {
 					s.longOrder = nil
 				} else if p.PositionSide == futures.PositionSideTypeShort && s.shortOrder != nil {
