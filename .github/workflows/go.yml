@@ -18,6 +18,12 @@ jobs:
       with:
         go-version: 1.17
 
-    - name: Build
-      run: go build fapi/main.go
+    - name: Build1
+      run: ls
+
+    - name: Build2
+      run: pwd
+
+    - name: Build3
+      run: ls binance-api
 
