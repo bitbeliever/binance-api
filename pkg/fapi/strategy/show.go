@@ -12,7 +12,7 @@ import (
 type Show struct{}
 
 func NewShow(symbol string) Show {
-	go position.MonitorPositions(symbol, -4, time.Second*2)
+	go position.MonitorPositions(symbol, -4, time.Second*2, func() {})
 	return Show{}
 }
 

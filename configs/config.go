@@ -12,12 +12,11 @@ import (
 var Cfg cfg
 
 type cfg struct {
-	Emu           bool
 	Debug         bool
 	KlineInterval string
 	Key           key `toml:"key"`
 	MaxLeverage   bool
-	StopLimit     float64 // 止损
+	StopLoss      float64 // 止损
 	TakeProfit    float64 // 止盈
 	Qty           string
 	Symbol        string
@@ -57,6 +56,9 @@ func init() {
 	b, err := json.MarshalIndent(Cfg, "", "  ")
 	if err != nil {
 		panic(err)
+	}
+	if Cfg.StopLoss >= 0 {
+		panic("config stop loss should < 0")
 	}
 	log.Println("cfg string:", string(b))
 }

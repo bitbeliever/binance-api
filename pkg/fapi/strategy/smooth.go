@@ -31,17 +31,6 @@ type pyramid struct {
 	//layers int // 金字塔层数
 }
 
-//func (p pyramid) phase2(price string, MB float64) int {
-//	curPrice := helper.Str2Float64(price)
-//
-//	for i := 1; i <= p.segments; i++ {
-//		if float64(i)*p.gap+MB > curPrice {
-//			return i
-//		}
-//	}
-//	return 0
-//}
-
 func (p pyramid) calcGap(b indicator.Boll) (float64, float64) {
 	res := b.Result()
 	return (res.UP - res.MB) / float64(p.segments), (res.MB - res.DN) / float64(p.segments)
@@ -95,23 +84,13 @@ func newPyramid(byArithmetic bool) pyramid {
 }
 
 type Smooth struct {
-	symbol string
-	p      pyramid
-	//firstHalfPyramid  pyramid
-	//secondHalfPyramid pyramid
+	symbol         string
+	p              pyramid
 	opened         bool
 	initLongOrder  *futures.CreateOrderResponse
 	initShortOrder *futures.CreateOrderResponse
 
-	// ==============
-	upperCh chan struct{}
-	lowerCh chan struct{}
-	//addedLongAmt  float64
-	//addedShortAmt float64
-	leverage *futures.SymbolLeverage
 	//state    map[int]float64
-	longAmt  float64
-	shortAmt float64
 	phaseAmt float64
 }
 
@@ -125,11 +104,8 @@ func NewSmooth(symbol string) *Smooth {
 	}
 
 	s := &Smooth{
-		symbol: symbol,
-		p:      newPyramid(true),
-		//firstHalfPyramid:  newPyramid(true),
-		//secondHalfPyramid: newPyramid(true),
-		//state: make(map[int]float64),
+		symbol:         symbol,
+		p:              newPyramid(true),
 		initLongOrder:  o1,
 		initShortOrder: o2,
 	}
@@ -140,8 +116,16 @@ func NewSmooth(symbol string) *Smooth {
 		s.opened = true
 	}
 
-	//go s.monitorUPDN()
-	go position.MonitorPositions(symbol, -4.7, time.Second*2)
+	//go position.MonitorPositions(symbol, configs.Cfg.StopLoss, time.Second*2, func() {
+	//	profit, err := position.CloseAllPositionsBySymbol(symbol)
+	//	if err != nil {
+	//		log.Println(err)
+	//		return
+	//	}
+	//	log.Println("monitor close profit", profit)
+	//})
+	go position.MonitorPositions(symbol, configs.Cfg.StopLoss, time.Second*2, s.reset)
+
 	return s
 }
 
@@ -254,8 +238,6 @@ func (s *Smooth) reset() {
 	cache.Client.Del(prefix+"init_long", prefix+"init_short")
 
 	s.opened = false
-	s.longAmt = 0
-	s.shortAmt = 0
 	s.phaseAmt = 0
 	s.initShortOrder = nil
 	s.initLongOrder = nil
@@ -303,29 +285,6 @@ func (s *Smooth) phaseHandler(boll indicator.Boll) error {
 	}
 
 	return nil
-}
-
-func (s *Smooth) monitorUPDN() {
-	for {
-		select {
-		case <-s.upperCh:
-			if s.initLongOrder != nil {
-				err := position.ClosePositionByOrderResp(s.initLongOrder)
-				if err != nil {
-					log.Println(err)
-				}
-				return
-			}
-		case <-s.lowerCh:
-			if s.initShortOrder != nil {
-				err := position.ClosePositionByOrderResp(s.initShortOrder)
-				if err != nil {
-					log.Println(err)
-				}
-				return
-			}
-		}
-	}
 }
 
 func (s *Smooth) phaseExists(phase int) (bool, error) {

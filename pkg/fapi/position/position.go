@@ -31,6 +31,7 @@ func ClosePositionByOrderResp(o *futures.CreateOrderResponse) error {
 	return nil
 }
 
+// ClosePositionBySymbol todo test
 func ClosePositionBySymbol(symbol string, amt float64) error {
 	var side futures.SideType
 	var amtStr = helper.FloatToStr(amt)
@@ -92,10 +93,10 @@ func reverseSideType(sideType futures.SideType) futures.SideType {
 	}
 }
 
-func CloseAllPositions() {
+func CloseAllPositions() (err error) {
 	pos, err := account.QueryAccountPositions()
 	if err != nil {
-		panic(err)
+		return
 	}
 
 	for _, position := range pos {
@@ -103,6 +104,7 @@ func CloseAllPositions() {
 			log.Println(err)
 		}
 	}
+	return
 }
 
 func CloseAllPositionsBySymbol(symbol string) (float64, error) {
@@ -164,4 +166,28 @@ func positionMonitor() {
 			}
 		}
 	}
+}
+
+func UnrealizedProfit() (float64, error) {
+	pos, err := account.QueryAccountPositions()
+	if err != nil {
+		return 0, err
+	}
+	var sum float64
+	for _, p := range pos {
+		sum += helper.Str2Float64(p.UnrealizedProfit)
+	}
+	return sum, nil
+}
+
+func UnrealizedProfitSymbol(symbol string) (float64, error) {
+	pos, err := account.QueryAccountPositionsBySymbol(symbol)
+	if err != nil {
+		return 0, err
+	}
+	var sum float64
+	for _, p := range pos {
+		sum += helper.Str2Float64(p.UnrealizedProfit)
+	}
+	return sum, nil
 }

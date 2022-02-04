@@ -23,9 +23,12 @@ func main() {
 }
 
 func closeAndClearKeys() {
-	position.CloseAllPositions()
-	if err := cache.ClearKeys("smooth_*"); err != nil {
+	err := position.CloseAllPositions()
+	if err != nil {
 		log.Println(err)
 	}
 
+	if err := cache.ClearKeys("smooth_*"); err != nil {
+		log.Println(err)
+	}
 }

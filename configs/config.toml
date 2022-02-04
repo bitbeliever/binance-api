@@ -1,10 +1,10 @@
 
 # todo
 TakeProfit=1.0
-StopLimit=1.2
+StopLoss=-5.0
 MaxLeverage=true
+
 Debug=true
-Emu=false
 KlineInterval="15m"
 Qty="0.08"
 Symbol="BCHUSDT"
@@ -23,5 +23,6 @@ PyramidSegments=20
 
 [redis]
 host="45.76.217.200"
+#host="localhost"
 port=6379
 password="huangshuai"
