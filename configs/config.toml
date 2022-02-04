@@ -22,4 +22,6 @@ SecretKey="0vFUpXy52nNp9bLB5sQVzU4vuocmqClupHf8l4DaiHUusBNTKRrIawveRMXUytQY"
 PyramidSegments=20
 
 [redis]
-host="localhost:6379"
+host="45.76.217.200"
+port=6379
+password="huangshuai"

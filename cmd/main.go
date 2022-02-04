@@ -6,6 +6,11 @@ import (
 	"github.com/bitbeliever/binance-api/pkg/fapi/strategy"
 )
 
+/*
+
+!!todo interval, limit,
+realtime profit calc and monitor
+*/
 func main() {
 	//const symbol = fapi.LTC
 	var symbol = configs.Cfg.Symbol

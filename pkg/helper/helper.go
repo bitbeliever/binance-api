@@ -3,6 +3,7 @@ package helper
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"math"
 	"strconv"
@@ -64,4 +65,8 @@ func Round(num float64) int {
 func ToFixed(num float64, precision int) float64 {
 	output := math.Pow(10, float64(precision))
 	return math.Floor(num*output) / output
+}
+
+func FloatToStr(f float64) string {
+	return fmt.Sprintf("%.2f", f)
 }

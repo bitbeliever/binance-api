@@ -16,7 +16,7 @@ func main() {
 
 	//closeOp()
 	//closeAndClearKeys()
-	//helper.JsonLog(account.QueryAccountPositions())
+	helper.JsonLog(account.QueryAccountPositions())
 	helper.JsonLog(account.QueryBalance())
 
 	//fapi.ComparePNLTest()

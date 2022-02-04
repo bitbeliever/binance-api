@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-func MonitorPositions(symbol string, tl float64, tick time.Duration) chan float64 {
-	ch := make(chan float64, 2<<10)
+func MonitorPositions(symbol string, stopLossLine float64, tick time.Duration) {
+	//ch := make(chan float64, 2<<10)
 	go func() {
 		tick := time.NewTicker(tick)
 		for {
@@ -25,7 +25,8 @@ func MonitorPositions(symbol string, tl float64, tick time.Duration) chan float6
 					profitSum += helper.Str2Float64(p.UnrealizedProfit)
 				}
 
-				if profitSum <= tl {
+				if profitSum <= stopLossLine {
+					log.Printf("monitor sl profitSum: %v, SL: %v \n", profitSum, stopLossLine)
 					profit, err := CloseAllPositionsBySymbol(symbol)
 					if err != nil {
 						log.Println(err)
@@ -37,5 +38,5 @@ func MonitorPositions(symbol string, tl float64, tick time.Duration) chan float6
 
 		}
 	}()
-	return ch
+	//return ch
 }

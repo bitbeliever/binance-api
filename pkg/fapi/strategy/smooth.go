@@ -112,6 +112,7 @@ type Smooth struct {
 	//state    map[int]float64
 	longAmt  float64
 	shortAmt float64
+	phaseAmt float64
 }
 
 func NewSmooth(symbol string) *Smooth {
@@ -140,6 +141,7 @@ func NewSmooth(symbol string) *Smooth {
 	}
 
 	//go s.monitorUPDN()
+	go position.MonitorPositions(symbol, -4.7, time.Second*2)
 	return s
 }
 
@@ -233,6 +235,9 @@ func newProfitResult(profit float64) profitResult {
 	}
 }
 
+func (s *Smooth) closePhasePositions() {
+}
+
 func (s *Smooth) reset() {
 	sum, err := position.CloseAllPositionsBySymbol(s.symbol)
 	if err != nil {
@@ -251,6 +256,7 @@ func (s *Smooth) reset() {
 	s.opened = false
 	s.longAmt = 0
 	s.shortAmt = 0
+	s.phaseAmt = 0
 	s.initShortOrder = nil
 	s.initLongOrder = nil
 
@@ -275,11 +281,17 @@ func (s *Smooth) phaseHandler(boll indicator.Boll) error {
 	// phase不存在
 	if !b {
 		var o *futures.CreateOrderResponse
-		var err error
+		//var err error
 		if phase > 0 {
 			o, err = order.DualSellShort(s.symbol, principal.Qty())
+			if err == nil {
+				s.phaseAmt -= helper.Str2Float64(principal.Qty())
+			}
 		} else {
 			o, err = order.DualBuyLong(s.symbol, principal.Qty())
+			if err == nil {
+				s.phaseAmt += helper.Str2Float64(principal.Qty())
+			}
 		}
 		if err != nil {
 			return err

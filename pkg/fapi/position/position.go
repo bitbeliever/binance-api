@@ -31,6 +31,26 @@ func ClosePositionByOrderResp(o *futures.CreateOrderResponse) error {
 	return nil
 }
 
+func ClosePositionBySymbol(symbol string, amt float64) error {
+	var side futures.SideType
+	var amtStr = helper.FloatToStr(amt)
+	var pSide futures.PositionSideType
+	if amt > 0 {
+		side = futures.SideTypeSell
+		pSide = futures.PositionSideTypeLong
+	} else {
+		side = futures.SideTypeBuy
+		pSide = futures.PositionSideTypeShort
+	}
+
+	o, err := order.CreateOrderDual(symbol, side, pSide, amtStr)
+	_ = o
+	if err != nil {
+		return err
+	}
+	return err
+}
+
 func ClosePosition(position *futures.AccountPosition) error {
 	var side futures.SideType
 	var amt string
@@ -96,6 +116,25 @@ func CloseAllPositionsBySymbol(symbol string) (float64, error) {
 		sum += helper.Str2Float64(position.UnrealizedProfit)
 		if err = ClosePosition(position); err != nil {
 			log.Println(err)
+		}
+	}
+
+	return sum, nil
+}
+
+func ClosePositionBySymbolSide(symbol string, pSide futures.PositionSideType) (float64, error) {
+	pos, err := account.QueryAccountPositionsBySymbol(symbol)
+	if err != nil {
+		return 0, err
+	}
+
+	var sum float64
+	for _, position := range pos {
+		if position.PositionSide == pSide {
+			if err = ClosePosition(position); err != nil {
+				log.Println(err)
+			}
+			sum += helper.Str2Float64(position.UnrealizedProfit)
 		}
 	}
 

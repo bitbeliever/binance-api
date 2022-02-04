@@ -12,6 +12,7 @@ const (
 	// file
 	FIL = "FILUSDT"
 	BNB = "BNBUSDT"
+	BCH = "BCHUSDT"
 )
 
 const (

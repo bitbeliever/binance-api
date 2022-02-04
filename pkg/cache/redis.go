@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"fmt"
 	"github.com/bitbeliever/binance-api/configs"
 	"github.com/go-redis/redis"
 	"log"
@@ -14,7 +15,8 @@ const (
 
 func init() {
 	Client = redis.NewClient(&redis.Options{
-		Addr: configs.Cfg.Redis.Host,
+		Addr:     fmt.Sprintf("%s:%d", configs.Cfg.Redis.Host, configs.Cfg.Redis.Port),
+		Password: configs.Cfg.Redis.Password,
 	})
 
 	res, err := Client.Ping().Result()

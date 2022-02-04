@@ -32,7 +32,9 @@ type key struct {
 }
 
 type redis struct {
-	Host string
+	Host     string
+	Port     int
+	Password string
 }
 
 type strategy struct {

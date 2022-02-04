@@ -1,1 +1,1 @@
-## binance-api dev
+## binance-api dev [![Go](https://github.com/bitbeliever/binance-api/actions/workflows/go.yml/badge.svg)](https://github.com/bitbeliever/binance-api/actions/workflows/go.yml)
