@@ -31,6 +31,18 @@ func ClosePositionByOrderResp(o *futures.CreateOrderResponse) error {
 	return nil
 }
 
+func CloseOrderResps(orders []*futures.CreateOrderResponse) (err error) {
+	if len(orders) == 0 {
+		return nil
+	}
+	var amt float64
+	for _, o := range orders {
+		amt += helper.Str2Float64(o.OrigQuantity)
+	}
+	orders[0].OrigQuantity = helper.FloatToStr(amt)
+	return ClosePositionByOrderResp(orders[0])
+}
+
 // ClosePositionBySymbol todo test
 func ClosePositionBySymbol(symbol string, amt float64) error {
 	var side futures.SideType

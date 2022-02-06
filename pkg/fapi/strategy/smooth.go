@@ -91,7 +91,7 @@ type Smooth struct {
 	initShortOrder *futures.CreateOrderResponse
 
 	//state    map[int]float64
-	phaseAmt float64
+	phaseOrders []*futures.CreateOrderResponse
 }
 
 func NewSmooth(symbol string) *Smooth {
@@ -134,43 +134,43 @@ func (s *Smooth) Do(lines []*futures.Kline) error {
 	// 跨中线 双开
 	if boll.CrossMB() {
 		// 平掉开了的仓位
-		if s.positionExists() && s.opened {
+		if s.phasePositionExists() {
 			log.Println("reset to close_all positions at", boll.CurrentPrice())
-			s.reset()
-			//return nil
+			//s.reset()
+			s.closePhaseOrders()
 		}
 
-		if s.opened {
-			return nil
+		//if s.opened {
+		//	return nil
+		//}
+
+		if s.initLongOrder == nil {
+			//longOrder, err := order.DualBuyLong(symbol, calcQty2(principal.SingleBetBalance(), boll.LastKline().Close))
+			longOrder, err := order.DualBuyLong(s.symbol, principal.Qty())
+			if err != nil {
+				return err
+			}
+			log.Println("中线 long order", helper.ToJson(longOrder))
+			s.initLongOrder = longOrder
+			if err := s.storeLongOrder(longOrder); err != nil {
+				log.Println(err)
+			}
 		}
 
-		//if s.initLongOrder == nil {
-		//	//longOrder, err := order.DualBuyLong(symbol, calcQty2(principal.SingleBetBalance(), boll.LastKline().Close))
-		//	longOrder, err := order.DualBuyLong(s.symbol, principal.Qty())
-		//	if err != nil {
-		//		return err
-		//	}
-		//	log.Println("中线 long order", helper.ToJson(longOrder))
-		//	s.initLongOrder = longOrder
-		//	if err := s.storeLongOrder(longOrder); err != nil {
-		//		log.Println(err)
-		//	}
-		//}
-		//
-		//if s.initShortOrder == nil {
-		//	//shortOrder, err := order.DualSellShort(symbol, calcQty2(principal.SingleBetBalance(), boll.LastKline().Close))
-		//	shortOrder, err := order.DualSellShort(s.symbol, principal.Qty())
-		//	if err != nil {
-		//		return err
-		//	}
-		//	log.Println("中线 short order", helper.ToJson(shortOrder))
-		//	s.initShortOrder = shortOrder
-		//	if err := s.storeShortOrder(shortOrder); err != nil {
-		//		log.Println(err)
-		//	}
-		//}
+		if s.initShortOrder == nil {
+			//shortOrder, err := order.DualSellShort(symbol, calcQty2(principal.SingleBetBalance(), boll.LastKline().Close))
+			shortOrder, err := order.DualSellShort(s.symbol, principal.Qty())
+			if err != nil {
+				return err
+			}
+			log.Println("中线 short order", helper.ToJson(shortOrder))
+			s.initShortOrder = shortOrder
+			if err := s.storeShortOrder(shortOrder); err != nil {
+				log.Println(err)
+			}
+		}
 
-		s.opened = true
+		//s.opened = true
 	} else if boll.IsFirstHalf() { // 上半段
 		if err := s.phaseHandler(boll); err != nil {
 			return err
@@ -222,6 +222,16 @@ func newProfitResult(profit float64) profitResult {
 func (s *Smooth) closePhasePositions() {
 }
 
+func (s *Smooth) closePhaseOrders() {
+	err := position.CloseOrderResps(s.phaseOrders)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	s.delPhaseKeys()
+	s.phaseOrders = nil
+}
+
 func (s *Smooth) reset() {
 	sum, err := position.CloseAllPositionsBySymbol(s.symbol)
 	if err != nil {
@@ -238,20 +248,23 @@ func (s *Smooth) reset() {
 	cache.Client.Del(prefix+"init_long", prefix+"init_short")
 
 	s.opened = false
-	s.phaseAmt = 0
 	s.initShortOrder = nil
 	s.initLongOrder = nil
+	s.phaseOrders = nil
 
-	//if err := beeep.Notify("profit", fmt.Sprintf("%v", sum), "assets/information.png"); err != nil {
-	//	log.Println(err)
-	//}
+	s.delPhaseKeys()
+}
 
-	// 清楚缓存key
-	if err := cache.ClearKeys(pattern); err != nil {
+// 清除缓存 phase key
+func (s *Smooth) delPhaseKeys() {
+	var keys []string
+	for i := 1; i <= s.p.segments; i++ {
+		keys = append(keys, s.KeyPhase(i))
+	}
+	if err := cache.Client.Del(keys...); err != nil {
 		log.Println(err)
 		return
 	}
-
 }
 
 func (s *Smooth) phaseHandler(boll indicator.Boll) error {
@@ -267,12 +280,12 @@ func (s *Smooth) phaseHandler(boll indicator.Boll) error {
 		if phase > 0 {
 			o, err = order.DualSellShort(s.symbol, principal.Qty())
 			if err == nil {
-				s.phaseAmt -= helper.Str2Float64(principal.Qty())
+				s.phaseOrders = append(s.phaseOrders, o)
 			}
 		} else {
 			o, err = order.DualBuyLong(s.symbol, principal.Qty())
 			if err == nil {
-				s.phaseAmt += helper.Str2Float64(principal.Qty())
+				s.phaseOrders = append(s.phaseOrders, o)
 			}
 		}
 		if err != nil {
@@ -299,7 +312,7 @@ func (s *Smooth) phaseExists(phase int) (bool, error) {
 	}
 }
 
-func (s *Smooth) positionExists() bool {
+func (s *Smooth) phasePositionExists() bool {
 	return len(cache.Client.Keys(pattern).Val()) > 0
 }
 
@@ -355,6 +368,7 @@ func resumeInitOrder() (orderLong *futures.CreateOrderResponse, orderShort *futu
 	if err = json.Unmarshal([]byte(short), orderShort); err != nil {
 		return
 	}
+	log.Printf("resume init long: %v short: %v\n", orderLong, orderShort)
 
 	return
 }

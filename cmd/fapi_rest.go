@@ -12,7 +12,7 @@ func main() {
 	helper.JsonLog(account.QueryAccountPositions())
 	//fapi.QueryAccount()
 	//fapi.QueryAllOrders(fapi.BNB)
-	o, err := order.DualBuyLong(fapi.BCH, "0.1")
+	o, err := order.DualBuyLong(fapi.BCH, "0.2")
 	if err != nil {
 		log.Println(err)
 	}
