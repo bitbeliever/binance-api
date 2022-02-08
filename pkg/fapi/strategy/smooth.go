@@ -115,6 +115,10 @@ func NewSmooth(symbol string) *Smooth {
 	if o1 != nil || o2 != nil {
 		s.opened = true
 	}
+	err = s.resumeFromPhaseOrders()
+	if err != nil {
+		log.Println(err)
+	}
 
 	//go position.MonitorPositions(symbol, configs.Cfg.StopLoss, time.Second*2, func() {
 	//	profit, err := position.CloseAllPositionsBySymbol(symbol)
@@ -255,14 +259,17 @@ func (s *Smooth) reset() {
 	s.delPhaseKeys()
 }
 
-// 清除缓存 phase key
-func (s *Smooth) delPhaseKeys() {
+func (s *Smooth) phaseKeys() []string {
 	var keys []string
 	for i := 1; i <= s.p.segments; i++ {
 		keys = append(keys, s.KeyPhase(i), s.KeyPhase(-i))
 	}
+	return keys
+}
 
-	if err := cache.Client.Del(keys...).Err(); err != nil {
+// 清除缓存 phase key
+func (s *Smooth) delPhaseKeys() {
+	if err := cache.Client.Del(s.phaseKeys()...).Err(); err != nil {
 		log.Println(err)
 		return
 	}
@@ -314,7 +321,31 @@ func (s *Smooth) phaseExists(phase int) (bool, error) {
 }
 
 func (s *Smooth) phasePositionExists() bool {
-	return len(cache.Client.Keys(pattern).Val()) > 0
+	return cache.Client.Exists(s.phaseKeys()...).Val() > 0
+}
+
+func (s *Smooth) storePhaseOrders(o *futures.CreateOrderResponse) error {
+	b, err := json.Marshal(o)
+	if err != nil {
+		return err
+	}
+	return cache.Client.LPush("smooth_phase", string(b)).Err()
+}
+
+func (s *Smooth) resumeFromPhaseOrders() (err error) {
+	strs, err := cache.Client.LRange("smooth_phase", 0, -1).Result()
+	if err != nil {
+		return
+	}
+	for _, str := range strs {
+		var o *futures.CreateOrderResponse
+		err = json.Unmarshal([]byte(str), o)
+		if err != nil {
+			return
+		}
+		s.phaseOrders = append(s.phaseOrders, o)
+	}
+	return
 }
 
 // 监控 stop loss
