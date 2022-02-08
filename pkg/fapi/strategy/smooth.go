@@ -135,7 +135,7 @@ func (s *Smooth) Do(lines []*futures.Kline) error {
 	if boll.CrossMB() {
 		// 平掉开了的仓位
 		if s.phasePositionExists() {
-			log.Println("reset to close_all positions at", boll.CurrentPrice())
+			log.Println("phase close positions at", boll.CurrentPrice())
 			//s.reset()
 			s.closePhaseOrders()
 		}
@@ -259,9 +259,10 @@ func (s *Smooth) reset() {
 func (s *Smooth) delPhaseKeys() {
 	var keys []string
 	for i := 1; i <= s.p.segments; i++ {
-		keys = append(keys, s.KeyPhase(i))
+		keys = append(keys, s.KeyPhase(i), s.KeyPhase(-i))
 	}
-	if err := cache.Client.Del(keys...); err != nil {
+
+	if err := cache.Client.Del(keys...).Err(); err != nil {
 		log.Println(err)
 		return
 	}

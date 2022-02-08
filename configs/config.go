@@ -42,6 +42,12 @@ type strategy struct {
 
 func init() {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
+	if _, err := os.Stat("log"); os.IsNotExist(err) {
+		// path/to/whatever does not exist
+		if err := os.Mkdir("log", os.ModePerm); err != nil {
+			panic(err)
+		}
+	}
 	f, err := os.Create(time.Now().Format("log/2006-01-02_15_04_05") + ".log")
 	if err != nil {
 		panic(err)

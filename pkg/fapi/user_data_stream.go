@@ -157,6 +157,7 @@ func formatPrintEvent(event *futures.WsUserDataEvent) {
 			log.Printf("交易对 %v, 仓位 %v, 方向 %v, 费前累计损益 %v, 持仓未实现盈亏 %v, 入仓价格 %v, 保证金模式 %v, 逐仓保证金: %v\n", position.Symbol, position.Amount, position.Side, position.AccumulatedRealized, position.UnrealizedPnL, position.EntryPrice, position.MarginType, position.IsolatedWallet)
 		}
 
+		// 更新余额
 		for _, balance := range event.AccountUpdate.Balances {
 			if balance.Asset == "USDT" {
 				principal.UpdateBalance(helper.Str2Float64(balance.Balance))
@@ -165,6 +166,9 @@ func formatPrintEvent(event *futures.WsUserDataEvent) {
 		log.Println("================================================================================")
 	} else if event.Event == futures.UserDataEventTypeOrderTradeUpdate {
 		// 订单更新事件 order trade update
+		if event.OrderTradeUpdate.Status == futures.OrderStatusTypeNew {
+			return
+		}
 		log.Printf("事件: %v, 时间: %v, TranTime: %v\n", event.Event, time.UnixMilli(event.Time).Format(layout), time.UnixMilli(event.TransactionTime).Format(layout))
 		log.Printf("交易对 %v, PNL [%v], tradeTime %v \n", event.OrderTradeUpdate.Symbol, event.OrderTradeUpdate.RealizedPnL, time.UnixMilli(event.OrderTradeUpdate.TradeTime))
 		log.Printf("状态 %v, 执行类型 %v, 有效方式 %v \n", event.OrderTradeUpdate.Status, event.OrderTradeUpdate.ExecutionType, event.OrderTradeUpdate.TimeInForce)

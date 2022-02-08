@@ -1,6 +1,7 @@
 package position
 
 import (
+	"fmt"
 	"github.com/adshao/go-binance/v2/futures"
 	"github.com/bitbeliever/binance-api/pkg/account"
 	"github.com/bitbeliever/binance-api/pkg/fapi/internal/principal"
@@ -105,15 +106,16 @@ func reverseSideType(sideType futures.SideType) futures.SideType {
 	}
 }
 
-func CloseAllPositions() (err error) {
+func CloseAllPositions() (profit float64, err error) {
 	pos, err := account.QueryAccountPositions()
 	if err != nil {
 		return
 	}
 
 	for _, position := range pos {
-		if err := ClosePosition(position); err != nil {
-			log.Println(err)
+		profit += helper.Str2Float64(position.UnrealizedProfit)
+		if er := ClosePosition(position); err != nil {
+			err = fmt.Errorf("%w", er)
 		}
 	}
 	return
@@ -180,16 +182,37 @@ func positionMonitor() {
 	}
 }
 
-func UnrealizedProfit() (float64, error) {
+type profit struct {
+	Symbol       string
+	PositionSide string
+	Amt          string
+	Profit       string
+}
+
+func (p profit) String() string {
+	return fmt.Sprintf("%s %s %s %s\n", p.Symbol, p.Amt, p.PositionSide, p.Profit)
+}
+
+func UnrealizedProfit() (float64, string, []*futures.AccountPosition, error) {
 	pos, err := account.QueryAccountPositions()
 	if err != nil {
-		return 0, err
+		return 0, "", nil, err
 	}
 	var sum float64
+	var detail = "\n"
+	var profits []profit
 	for _, p := range pos {
 		sum += helper.Str2Float64(p.UnrealizedProfit)
+		detail += fmt.Sprintf("%s %s %s %s\n", p.Symbol, p.PositionAmt, p.PositionSide, p.UnrealizedProfit)
+		profits = append(profits, profit{
+			Symbol:       p.Symbol,
+			PositionSide: string(p.PositionSide),
+			Amt:          p.PositionAmt,
+			Profit:       p.UnrealizedProfit,
+		})
 	}
-	return sum, nil
+	detail += fmt.Sprintf("total profit %v\n", sum)
+	return sum, detail, pos, nil
 }
 
 func UnrealizedProfitSymbol(symbol string) (float64, error) {
@@ -202,4 +225,8 @@ func UnrealizedProfitSymbol(symbol string) (float64, error) {
 		sum += helper.Str2Float64(p.UnrealizedProfit)
 	}
 	return sum, nil
+}
+
+func positionHandler(o *futures.CreateOrderResponse) {
+
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/bitbeliever/binance-api/pkg/account"
 	"github.com/bitbeliever/binance-api/pkg/helper"
 	"log"
-	"os"
 	"sync"
 )
 
@@ -75,9 +74,9 @@ func Qty() string {
 }
 
 func init() {
-	if err := os.Remove("line.txt"); err != nil {
-		log.Println(err)
-	}
+	//if err := os.Remove("line.txt"); err != nil {
+	//	log.Println(err)
+	//}
 
 	balances, err := account.QueryBalance()
 	must(err)

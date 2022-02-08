@@ -40,6 +40,7 @@ func (a *Average) Do(lines []*futures.Kline) error {
 		return nil
 	}
 
+	// 位于ma线上方 sell short
 	if helper.Str2Float64(ma.CurrentPrice()) >= helper.Str2Float64(ma.AveragePrice())+a.gap {
 		if a.short == nil {
 			resp, err := order.DualSellShortSL(a.symbol, "0.08", ma.AveragePrice())
@@ -52,7 +53,7 @@ func (a *Average) Do(lines []*futures.Kline) error {
 			}
 			a.short = resp
 		}
-	} else if helper.Str2Float64(ma.CurrentPrice()) <= helper.Str2Float64(ma.AveragePrice())-a.gap {
+	} else if helper.Str2Float64(ma.CurrentPrice()) <= helper.Str2Float64(ma.AveragePrice())-a.gap { // 位于ma线下方  buy long
 		if a.long == nil {
 			resp, err := order.DualBuyLongSL(a.symbol, "0.08", ma.AveragePrice())
 			if err != nil {

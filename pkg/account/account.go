@@ -5,6 +5,7 @@ import (
 	"github.com/adshao/go-binance/v2/futures"
 	"github.com/bitbeliever/binance-api/pkg/fapi/client"
 	"github.com/bitbeliever/binance-api/pkg/helper"
+	"log"
 	"time"
 )
 
@@ -153,6 +154,17 @@ func QueryAccountPositions() ([]*futures.AccountPosition, error) {
 		}
 	}
 	return positions, nil
+}
+
+func PositionsFormat() {
+	positions, err := QueryAccountPositions()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	for _, p := range positions {
+		log.Printf("%s %s %s %s\n", p.Symbol, p.PositionAmt, p.PositionSide, p.UnrealizedProfit)
+	}
 }
 
 func QueryAccountPositionsBySymbol(symbol string) (pos []*futures.AccountPosition, err error) {
