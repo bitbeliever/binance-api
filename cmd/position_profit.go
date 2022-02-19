@@ -9,7 +9,7 @@ import (
 
 func main() {
 	m := NewMotion()
-	m.Reg("LTCUSDTSHORT", tuple{1, -1})
+	m.Reg("LTCUSDTLONG", tuple{1, -2})
 	m.Run()
 }
 

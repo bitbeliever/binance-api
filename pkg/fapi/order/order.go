@@ -395,3 +395,18 @@ func CancelAllOpenOrders() (err error) {
 func QueryHistoryProfit(symbol string) (float64, error) {
 	return 0, nil
 }
+
+// CalcPNL todo curprice cant undefined
+func CalcPNL(o *futures.CreateOrderResponse, curPrice string) float64 {
+	var side float64
+	if o.PositionSide == futures.PositionSideTypeLong {
+		side = 1
+	} else if o.PositionSide == futures.PositionSideTypeShort {
+		side = -1
+	} else {
+		log.Println("wrong side type", o.PositionSide)
+		return 0
+	}
+
+	return helper.Str2Float64(o.OrigQuantity) * side * (helper.Str2Float64(curPrice) - helper.Str2Float64(o.AvgPrice))
+}

@@ -41,7 +41,9 @@ func CloseOrderResps(orders []*futures.CreateOrderResponse) (err error) {
 		amt += helper.Str2Float64(o.OrigQuantity)
 	}
 	orders[0].OrigQuantity = helper.FloatToStr(amt)
-	return ClosePositionByOrderResp(orders[0])
+	err = ClosePositionByOrderResp(orders[0])
+	//profit = order.CalcPNL(orders[0])
+	return
 }
 
 // ClosePositionBySymbol todo test

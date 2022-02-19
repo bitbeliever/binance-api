@@ -11,7 +11,7 @@ func main() {
 
 	helper.JsonLog(account.QueryAccountPositions())
 
-	//_, err := order.DualSellShort("LTCUSDT", "0.5")
+	//_, err := order.DualSellShort("LTCUSDT", "0.3")
 	//if err != nil {
 	//	log.Println(err)
 	//}
@@ -19,6 +19,8 @@ func main() {
 	//log.Println(f, err)
 	//account.PositionsFormat()
 	//closeAndClearKeys()
+	//f, err := position.CloseAllPositionsBySymbol("BCHUSDT")
+	//log.Println(f, err)
 	helper.JsonLog(account.QueryBalance())
 
 	//fapi.ComparePNLTest()

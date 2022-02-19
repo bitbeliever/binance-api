@@ -233,7 +233,7 @@ func (s *Smooth) closePhaseOrders() {
 		return
 	}
 	s.delPhaseKeys()
-	s.phaseOrders = nil
+	//log.Println("phase close profit", profit)
 }
 
 func (s *Smooth) reset() {
@@ -289,11 +289,17 @@ func (s *Smooth) phaseHandler(boll indicator.Boll) error {
 			o, err = order.DualSellShort(s.symbol, principal.Qty())
 			if err == nil {
 				s.phaseOrders = append(s.phaseOrders, o)
+				if err := s.storePhaseOrders(o); err != nil {
+					log.Println(err)
+				}
 			}
 		} else {
 			o, err = order.DualBuyLong(s.symbol, principal.Qty())
 			if err == nil {
 				s.phaseOrders = append(s.phaseOrders, o)
+				if err := s.storePhaseOrders(o); err != nil {
+					log.Println(err)
+				}
 			}
 		}
 		if err != nil {
